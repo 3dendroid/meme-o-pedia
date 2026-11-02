@@ -1,0 +1,13 @@
+# Кластер из трёх узлов: один управляющий и два рабочих.
+# Порт 30080 (NodePort сервиса API) пробрасывается на порт 8080 виртуалки,
+# поэтому сайт открывается по адресу http://localhost:8080.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: memes
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - containerPort: 30080
+        hostPort: 8080
+  - role: worker
+  - role: worker

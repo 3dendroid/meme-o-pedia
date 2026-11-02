@@ -1,0 +1,36 @@
+# Быстрый запуск без Kubernetes: docker compose up --build
+# Пароли берутся из файла .env (см. .env.example).
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: memes
+      POSTGRES_DB: memes
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U memes"]
+      interval: 2s
+      retries: 30
+
+  redis:
+    image: redis:7-alpine
+
+  api:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: postgres
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_ADDR: redis:6379
+      ADMIN_TOKEN: ${ADMIN_TOKEN:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+volumes:
+  pgdata:
