@@ -4,60 +4,268 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Meme-o-pedia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <style>
-  :root { --bg:#fff; --fg:#111; --muted:#555; --line:#111; --soft:#f2f2f2; --accent:#ffd60a; --blue:#2f5bea; }
-  @media (prefers-color-scheme: dark) { :root { --bg:#121212; --fg:#f2f2f2; --muted:#b0b0b0; --line:#f2f2f2; --soft:#222; } }
+  /* Layout: a catalogue of memes grouped by year, cards in a responsive grid. */
+  :root {
+    --bg: #fafaf7;
+    --surface: #ffffff;
+    --ink: #16161a;
+    --muted: #5c5c66;
+    --line: #e3e3dc;
+    --accent: #ffd60a;
+    --accent-ink: #16161a;
+    --classic: #2f5bea;
+    --classic-ink: #ffffff;
+    --outdated: #ecece6;
+    --outdated-ink: #4a4a52;
+    --cover-l: 86%;
+    --cover-s: 70%;
+    --cover-ink: #16161a;
+    --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+    --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111113;
+      --surface: #1b1b1f;
+      --ink: #f2f2ee;
+      --muted: #a3a3ad;
+      --line: #2c2c33;
+      --classic: #5b80ff;
+      --classic-ink: #0b0b0d;
+      --outdated: #2c2c33;
+      --outdated-ink: #c2c2ca;
+      --cover-l: 30%;
+      --cover-s: 40%;
+      --cover-ink: #f2f2ee;
+      color-scheme: dark;
+    }
+  }
+
   * { box-sizing: border-box; }
-  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.45 system-ui, sans-serif; }
-  main { max-width: 720px; margin: 0 auto; padding: 24px 16px; display:flex; flex-direction:column; gap:16px; }
-  h1 { margin:0; font-size:32px; letter-spacing:-.5px; }
-  h1 span { background:var(--accent); color:#111; padding:0 6px; }
-  input, button { font:inherit; color:inherit; }
-  input[type=search] { width:100%; height:46px; padding:0 14px; border:0; border-radius:12px; background:var(--soft); }
-  .chips { display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; }
-  .chip { flex-shrink:0; height:38px; padding:0 14px; border:2px solid var(--line); border-radius:999px; background:var(--bg); cursor:pointer; font-weight:600; font-size:14px; }
-  .chip[aria-pressed=true] { background:var(--fg); color:var(--bg); }
-  .bar { display:flex; justify-content:space-between; align-items:center; color:var(--muted); font-size:14px; }
-  .bar button { border:0; background:none; font-weight:600; cursor:pointer; min-height:36px; }
-  ul { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:12px; }
-  li { border:2px solid var(--line); border-radius:16px; padding:14px; display:flex; flex-direction:column; gap:6px; }
-  .title { font-weight:700; font-size:18px; }
-  .meta { color:var(--muted); font-size:14px; }
-  .badge { align-self:flex-start; font-size:12px; font-weight:600; padding:2px 8px; border-radius:999px; }
-  .trend { background:var(--accent); color:#111; }
-  .classic { background:var(--blue); color:#fff; }
-  .outdated { background:var(--soft); color:var(--muted); }
-  .error { color:#c62828; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.5 var(--font-body);
+  }
+  .wrap {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 0 max(16px, env(safe-area-inset-left, 0px)) 0 max(16px, env(safe-area-inset-right, 0px));
+  }
+
+  /* Header */
+  header { padding-block: 48px 28px; display: flex; flex-direction: column; gap: 18px; }
+  h1 {
+    margin: 0;
+    font: 800 clamp(40px, 7vw, 72px)/1 var(--font-display);
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+  }
+  h1 span { background: var(--accent); color: var(--accent-ink); padding: 0 .12em; border-radius: 4px; }
+  .lede { margin: 0; max-width: 60ch; color: var(--muted); font-size: 18px; }
+  .stats { display: flex; flex-wrap: wrap; gap: 28px; margin: 4px 0 0; padding: 0; list-style: none; }
+  .stats li { display: flex; flex-direction: column; }
+  .stats b { font: 800 28px/1.1 var(--font-display); font-variant-numeric: tabular-nums; }
+  .stats span { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: .06em; }
+
+  /* Controls */
+  .controls {
+    border-bottom: 1px solid var(--line);
+    padding-block: 14px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .search {
+    display: flex; align-items: center; gap: 10px;
+    height: 50px; padding: 0 16px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+  }
+  .search:focus-within { border-color: var(--ink); }
+  .search svg { flex-shrink: 0; color: var(--muted); }
+  .search input { flex: 1; min-width: 0; border: 0; background: transparent; font: inherit; font-size: 16px; color: var(--ink); outline: none; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    min-height: 36px; padding: 0 14px;
+    border: 1px solid var(--line); border-radius: 999px;
+    background: var(--surface); color: var(--ink);
+    font: 500 14px var(--font-body); cursor: pointer;
+  }
+  .chip:hover { border-color: var(--ink); }
+  .chip[aria-pressed=true] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .chip small { font-family: var(--font-mono); opacity: .7; margin-left: 4px; }
+  .bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; color: var(--muted); font-size: 14px; }
+  .sort {
+    min-height: 36px; padding: 0 10px; border: 0; border-radius: 8px;
+    background: transparent; color: var(--ink); font: 600 14px var(--font-body); cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .sort:hover { background: var(--surface); }
+  :focus-visible { outline: 3px solid var(--classic); outline-offset: 2px; }
+
+  /* Year sections and cards */
+  main { padding-block: 8px 64px; }
+  .year { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 24px; padding-block: 28px; border-bottom: 1px solid var(--line); }
+  .year h2 {
+    margin: 0; position: sticky; top: 16px; align-self: start;
+    font: 800 44px/1 var(--font-display); letter-spacing: -0.02em; font-variant-numeric: tabular-nums;
+  }
+  .year h2 small { display: block; margin-top: 6px; font: 500 13px var(--font-body); color: var(--muted); letter-spacing: 0; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+  .card {
+    display: flex; flex-direction: column;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
+  }
+  .cover {
+    height: 112px; display: flex; align-items: flex-end; justify-content: space-between; padding: 12px 14px;
+    color: var(--cover-ink);
+  }
+  .cover .initials { font: 800 44px/1 var(--font-display); letter-spacing: -0.03em; opacity: .85; }
+  .cover .code {
+    font: 500 12px var(--font-mono); padding: 3px 7px; border-radius: 6px;
+    background: color-mix(in srgb, var(--surface) 70%, transparent);
+  }
+  .body { padding: 14px 16px 18px; display: flex; flex-direction: column; gap: 8px; }
+  .card h3 { margin: 0; font: 800 20px/1.2 var(--font-display); letter-spacing: -0.01em; text-wrap: balance; }
+  .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--muted); font-size: 14px; }
+  .badge { font: 600 12px var(--font-body); padding: 2px 9px; border-radius: 999px; }
+  .trend { background: var(--accent); color: var(--accent-ink); }
+  .classic { background: var(--classic); color: var(--classic-ink); }
+  .outdated { background: var(--outdated); color: var(--outdated-ink); }
+  .card p { margin: 0; font-size: 15px; }
+
+  .empty { padding: 64px 0; text-align: center; color: var(--muted); }
+  .empty b { display: block; font: 800 24px var(--font-display); color: var(--ink); margin-bottom: 6px; }
+  .error { color: #c62828; }
+
+  footer { padding-block: 24px 40px; color: var(--muted); font-size: 13px; }
+
+  @media (max-width: 640px) {
+    header { padding-block: 32px 20px; }
+    .year { grid-template-columns: minmax(0, 1fr); gap: 12px; padding-block: 20px; }
+    .year h2 { position: static; font-size: 36px; }
+    .year h2 small { display: inline; margin-left: 8px; }
+  }
 </style>
 </head>
 <body>
-<main>
-  <h1>Meme-o-<span>pedia</span></h1>
-  <label for="q" hidden>Search</label>
-  <input id="q" type="search" placeholder="Search memes">
-  <div class="chips" id="countries"></div>
-  <div class="bar"><span id="count"></span><button id="sort" type="button">Newest first</button></div>
-  <ul id="list"></ul>
-</main>
+<div class="wrap">
+  <header>
+    <h1>Meme-o-<span>pedia</span></h1>
+    <p class="lede">An encyclopedia of internet memes: where each one came from, when it appeared and whether people still use it.</p>
+    <ul class="stats" aria-label="Collection summary">
+      <li><b id="stat-memes">–</b><span>memes</span></li>
+      <li><b id="stat-countries">–</b><span>countries</span></li>
+      <li><b id="stat-years">–</b><span>years covered</span></li>
+    </ul>
+  </header>
+
+  <div class="controls">
+    <label class="search" for="q">
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+      <span hidden>Search</span>
+      <input id="q" type="search" placeholder="Search by name or description" autocomplete="off">
+    </label>
+    <div class="chips" id="countries" role="group" aria-label="Filter by country"></div>
+    <div class="bar">
+      <span id="count" aria-live="polite"></span>
+      <button id="sort" class="sort" type="button">
+        <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 4v16M3 16l4 4 4-4M17 20V4M13 8l4-4 4 4"/></svg>
+        <span>Newest first</span>
+      </button>
+    </div>
+  </div>
+
+  <main id="list"></main>
+
+  <footer>Dates and countries are approximate. Statuses reflect popularity at the time the entries were written.</footer>
+</div>
 <script>
 const STATUS = { trend: 'Trending', classic: 'Classic', outdated: 'Outdated' };
 const state = { country: '', q: '', sort: 'new' };
 const $ = (id) => document.getElementById(id);
 
-function el(tag, props, text) {
+function el(tag, className, text) {
   const e = document.createElement(tag);
-  Object.assign(e, props);
+  if (className) e.className = className;
   if (text !== undefined) e.textContent = text;
   return e;
+}
+
+// A stable hue per title, so every card cover gets its own color.
+function hue(s) {
+  let h = 0;
+  for (const ch of s) h = (h * 31 + ch.codePointAt(0)) % 360;
+  return h;
+}
+
+function initials(title) {
+  const words = title.replace(/[^\p{L}\p{N} ]/gu, ' ').split(/\s+/).filter(Boolean);
+  return (words.length > 1 ? words[0][0] + words[1][0] : (words[0] || '?').slice(0, 2)).toUpperCase();
+}
+
+function card(m) {
+  const c = el('article', 'card');
+  const cover = el('div', 'cover');
+  cover.style.background = `hsl(${hue(m.title)} var(--cover-s) var(--cover-l))`;
+  cover.setAttribute('aria-hidden', 'true');
+  cover.append(el('span', 'initials', initials(m.title)), el('span', 'code', m.country_code));
+
+  const body = el('div', 'body');
+  const meta = el('div', 'meta');
+  meta.append(el('span', '', m.country_name), el('span', 'badge ' + m.status, STATUS[m.status] || m.status));
+  body.append(el('h3', '', m.title), meta, el('p', '', m.description));
+  c.append(cover, body);
+  return c;
+}
+
+function render(memes) {
+  const list = $('list');
+  $('count').textContent = memes.length + (memes.length === 1 ? ' meme' : ' memes');
+  if (memes.length === 0) {
+    const e = el('div', 'empty');
+    e.append(el('b', '', 'No memes found'), el('span', '', 'Try another search or pick a different country.'));
+    list.replaceChildren(e);
+    return;
+  }
+  // The API already returns memes sorted by year, so group consecutive ones.
+  const sections = [];
+  let current;
+  for (const m of memes) {
+    if (!current || current.year !== m.year) {
+      current = { year: m.year, items: [] };
+      sections.push(current);
+    }
+    current.items.push(m);
+  }
+  list.replaceChildren(...sections.map((s) => {
+    const sec = el('section', 'year');
+    sec.setAttribute('aria-label', String(s.year));
+    const h = el('h2', '', String(s.year));
+    h.append(el('small', '', s.items.length === 1 ? '1 meme' : s.items.length + ' memes'));
+    const grid = el('div', 'grid');
+    grid.append(...s.items.map(card));
+    sec.append(h, grid);
+    return sec;
+  }));
 }
 
 async function loadCountries() {
   const res = await fetch('/api/countries');
   const countries = await res.json();
+  const total = countries.reduce((n, c) => n + c.count, 0);
+  $('stat-memes').textContent = total;
+  $('stat-countries').textContent = countries.length;
+
   const box = $('countries');
-  const all = [{ code: '', name: 'All' }, ...countries];
-  for (const c of all) {
-    const b = el('button', { type: 'button', className: 'chip' }, c.count ? `${c.name} · ${c.count}` : c.name);
+  for (const c of [{ code: '', name: 'All', count: total }, ...countries]) {
+    const b = el('button', 'chip', c.name);
+    b.type = 'button';
+    b.append(el('small', '', String(c.count)));
     b.setAttribute('aria-pressed', String(c.code === state.country));
     b.onclick = () => {
       state.country = c.code;
@@ -69,26 +277,20 @@ async function loadCountries() {
   }
 }
 
+let firstLoad = true;
 async function loadMemes() {
-  const params = new URLSearchParams(state);
-  const list = $('list');
   try {
-    const res = await fetch('/api/memes?' + params);
+    const res = await fetch('/api/memes?' + new URLSearchParams(state));
     if (!res.ok) throw new Error((await res.json()).error);
     const memes = await res.json();
-    $('count').textContent = memes.length + (memes.length === 1 ? ' meme' : ' memes');
-    list.replaceChildren(...memes.map((m) => {
-      const li = el('li');
-      li.append(
-        el('span', { className: 'title' }, m.title),
-        el('span', { className: 'meta' }, `${m.country_name} · ${m.year}`),
-        el('span', { className: 'badge ' + m.status }, STATUS[m.status] || m.status),
-        el('span', {}, m.description),
-      );
-      return li;
-    }));
+    if (firstLoad && memes.length) {
+      const years = memes.map((m) => m.year);
+      $('stat-years').textContent = Math.min(...years) + '–' + Math.max(...years);
+      firstLoad = false;
+    }
+    render(memes);
   } catch (e) {
-    list.replaceChildren(el('li', { className: 'error' }, 'Could not load memes: ' + e.message));
+    $('list').replaceChildren(el('p', 'error', 'Could not load memes: ' + e.message));
   }
 }
 
@@ -97,9 +299,9 @@ $('q').oninput = (e) => {
   clearTimeout(timer);
   timer = setTimeout(() => { state.q = e.target.value; loadMemes(); }, 300);
 };
-$('sort').onclick = (e) => {
+$('sort').onclick = () => {
   state.sort = state.sort === 'new' ? 'old' : 'new';
-  e.target.textContent = state.sort === 'new' ? 'Newest first' : 'Oldest first';
+  $('sort').querySelector('span').textContent = state.sort === 'new' ? 'Newest first' : 'Oldest first';
   loadMemes();
 };
 
