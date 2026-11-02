@@ -1,5 +1,5 @@
-# Быстрый запуск без Kubernetes: docker compose up --build
-# Пароли берутся из файла .env (см. .env.example).
+# Quick start without Kubernetes: docker compose up --build
+# Passwords come from the .env file (see .env.example).
 services:
   postgres:
     image: postgres:16-alpine

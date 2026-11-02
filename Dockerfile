@@ -1,15 +1,15 @@
-# Этап 1: сборка. Здесь есть компилятор Go — образ большой, но он нужен только для сборки.
+# Stage 1: build. This image has the Go compiler; it is large but only needed for the build.
 FROM golang:1.24-alpine AS build
 WORKDIR /src
-# Сначала только go.mod/go.sum: Docker закэширует скачанные зависимости,
-# и при изменении кода они не будут скачиваться заново.
+# Copy only go.mod/go.sum first: Docker caches the downloaded dependencies,
+# so they are not downloaded again when only the code changes.
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-# CGO_ENABLED=0 — статический бинарник, которому не нужны системные библиотеки.
+# CGO_ENABLED=0 produces a static binary that needs no system libraries.
 RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /meme-o-pedia .
 
-# Этап 2: итоговый образ. Только бинарник, без shell и пакетного менеджера (~15 МБ).
+# Stage 2: final image. Just the binary, no shell or package manager (~20 MB).
 FROM gcr.io/distroless/static-debian12:nonroot
 COPY --from=build /meme-o-pedia /meme-o-pedia
 USER nonroot:nonroot

@@ -1,7 +1,7 @@
-// Command meme-o-pedia — HTTP API и веб-страница энциклопедии мемов.
+// Command meme-o-pedia is the HTTP API and web page of the meme encyclopedia.
 //
-// Все настройки читаются из переменных окружения (см. loadConfig).
-// В Kubernetes пароли приходят из Secret, остальное — из Deployment.
+// All settings come from environment variables (see loadConfig).
+// In Kubernetes, passwords come from a Secret and everything else from the Deployment.
 package main
 
 import (
@@ -32,8 +32,8 @@ func env(key, def string) string {
 }
 
 func loadConfig() (config, error) {
-	// Строку подключения собираем через url.URL, чтобы спецсимволы
-	// в пароле (например @ или /) не ломали её.
+	// Build the connection string with url.URL so that special characters
+	// in the password (such as @ or /) don't break it.
 	dsn := url.URL{
 		Scheme:   "postgres",
 		User:     url.UserPassword(env("DB_USER", "memes"), os.Getenv("DB_PASSWORD")),
@@ -44,7 +44,7 @@ func loadConfig() (config, error) {
 	cfg := config{
 		Port:        env("PORT", "8080"),
 		DatabaseURL: dsn.String(),
-		RedisAddr:   os.Getenv("REDIS_ADDR"), // пусто — работаем без кэша
+		RedisAddr:   os.Getenv("REDIS_ADDR"), // empty means run without a cache
 		RedisPass:   os.Getenv("REDIS_PASSWORD"),
 		AdminToken:  os.Getenv("ADMIN_TOKEN"),
 	}
@@ -99,8 +99,8 @@ func main() {
 		}
 	}()
 
-	// Kubernetes присылает SIGTERM перед удалением пода:
-	// дорабатываем текущие запросы и выходим.
+	// Kubernetes sends SIGTERM before deleting a pod:
+	// finish the requests in flight and exit.
 	<-ctx.Done()
 	log.Info("shutting down")
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

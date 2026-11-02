@@ -38,7 +38,7 @@ func (s *server) routes() http.Handler {
 	mux.HandleFunc("GET /api/countries", s.listCountries)
 	mux.HandleFunc("POST /api/memes", s.createMeme)
 
-	// liveness: процесс жив. readiness: можно слать трафик (база отвечает).
+	// liveness: the process is alive. readiness: it can take traffic (the database answers).
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("ok"))
 	})
@@ -89,8 +89,8 @@ func (s *server) listCountries(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// cached отдаёт ответ из Redis, а при промахе — из базы, сохраняя
-// результат в кэш. Заголовок X-Cache показывает, откуда пришёл ответ.
+// cached serves the response from Redis, or on a miss from the database,
+// saving the result to the cache. The X-Cache header shows where it came from.
 func (s *server) cached(w http.ResponseWriter, r *http.Request, key string, load func(context.Context) (any, error)) {
 	if body, ok := s.cache.Get(r.Context(), key); ok {
 		w.Header().Set("X-Cache", "HIT")
@@ -155,8 +155,8 @@ func (s *server) createMeme(w http.ResponseWriter, r *http.Request) {
 
 func (s *server) isAdmin(r *http.Request) bool {
 	token, ok := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
-	// Пустой ADMIN_TOKEN отключает запись совсем.
-	// ConstantTimeCompare не даёт подобрать токен по времени ответа.
+	// An empty ADMIN_TOKEN disables writes entirely.
+	// ConstantTimeCompare prevents guessing the token from response timing.
 	return ok && s.adminToken != "" &&
 		subtle.ConstantTimeCompare([]byte(token), []byte(s.adminToken)) == 1
 }
@@ -208,7 +208,7 @@ func logRequests(next http.Handler) http.Handler {
 		rec := &statusRecorder{ResponseWriter: w, code: http.StatusOK}
 		next.ServeHTTP(rec, r)
 		if r.URL.Path == "/healthz" || r.URL.Path == "/readyz" {
-			return // пробы Kubernetes приходят каждые несколько секунд — не засоряем лог
+			return // Kubernetes probes arrive every few seconds; keep them out of the log
 		}
 		slog.Info("request", "method", r.Method, "path", r.URL.Path,
 			"status", rec.code, "duration_ms", time.Since(start).Milliseconds())

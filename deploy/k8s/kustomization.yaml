@@ -1,6 +1,6 @@
-# Применяется командой: kubectl apply -k deploy/k8s
-# Secret meme-secrets сюда не входит — он создаётся отдельно из .env
-# (см. scripts/kind-up.sh), чтобы пароли не попали в git.
+# Apply with: kubectl apply -k deploy/k8s
+# The meme-secrets Secret is not included: it is created separately from .env
+# (see scripts/kind-up.sh) so that passwords never end up in git.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: memes

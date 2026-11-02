@@ -29,15 +29,15 @@ type Country struct {
 }
 
 type Filter struct {
-	Country string // код страны, например "US"; пусто — все
-	Query   string // поиск по названию и описанию
-	Oldest  bool   // true — сначала старые
+	Country string // country code such as "US"; empty means all
+	Query   string // search in title and description
+	Oldest  bool   // true means oldest first
 }
 
 var ErrNotFound = errors.New("not found")
 
-// Store — всё, что API нужно от базы. Интерфейс позволяет
-// подменить базу в тестах.
+// Store is everything the API needs from the database. The interface
+// lets tests replace the database with a fake.
 type Store interface {
 	List(ctx context.Context, f Filter) ([]Meme, error)
 	Get(ctx context.Context, id int) (Meme, error)
@@ -48,8 +48,8 @@ type Store interface {
 
 type pgStore struct{ pool *pgxpool.Pool }
 
-// connectStore ждёт базу до минуты: в Kubernetes под API может
-// стартовать раньше, чем Postgres готов принимать подключения.
+// connectStore waits up to a minute for the database: in Kubernetes the API
+// pod may start before Postgres is ready to accept connections.
 func connectStore(ctx context.Context, dsn string) (*pgStore, error) {
 	pool, err := pgxpool.New(ctx, dsn)
 	if err != nil {
@@ -81,10 +81,10 @@ func (s *pgStore) Ping(ctx context.Context) error { return s.pool.Ping(ctx) }
 //go:embed migrations/*.sql
 var migrations embed.FS
 
-// Migrate создаёт таблицу и заполняет её стартовыми мемами.
-// Несколько копий API могут стартовать одновременно, поэтому
-// работа идёт под advisory-блокировкой: её получит только одна копия,
-// остальные подождут и увидят, что всё уже сделано.
+// Migrate creates the table and fills it with the starter memes.
+// Several API replicas may start at the same time, so the work runs under
+// an advisory lock: only one replica gets it, the others wait and then
+// see that everything is already done.
 func (s *pgStore) Migrate(ctx context.Context) error {
 	schema, err := migrations.ReadFile("migrations/001_schema.sql")
 	if err != nil {
@@ -126,7 +126,7 @@ func (s *pgStore) List(ctx context.Context, f Filter) ([]Meme, error) {
 	if f.Oldest {
 		order = "year ASC, id ASC"
 	}
-	// Параметры передаются отдельно ($1, $2) — так нет SQL-инъекций.
+	// Parameters are passed separately ($1, $2), so there is no SQL injection.
 	rows, err := s.pool.Query(ctx, `
 		SELECT `+memeColumns+` FROM memes
 		WHERE ($1 = '' OR country_code = $1)
