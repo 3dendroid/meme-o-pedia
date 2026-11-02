@@ -28,7 +28,7 @@ func (f *fakeStore) Get(_ context.Context, id int) (Meme, error) {
 	return Meme{}, ErrNotFound
 }
 func (f *fakeStore) Countries(context.Context) ([]Country, error) {
-	return []Country{{Code: "US", Name: "США", Count: 1}}, nil
+	return []Country{{Code: "US", Name: "United States", Count: 1}}, nil
 }
 func (f *fakeStore) Create(_ context.Context, m Meme) (Meme, error) {
 	m.ID = 100
@@ -47,7 +47,7 @@ func (c *mapCache) Set(_ context.Context, k string, v []byte)      { c.data[k] =
 func (c *mapCache) Invalidate(context.Context)                     { c.invalidated++; c.data = map[string][]byte{} }
 
 func setup() (*fakeStore, *mapCache, http.Handler) {
-	st := &fakeStore{memes: []Meme{{ID: 1, Title: "Doge", CountryCode: "JP", CountryName: "Япония", Year: 2013, Status: "classic"}}}
+	st := &fakeStore{memes: []Meme{{ID: 1, Title: "Doge", CountryCode: "JP", CountryName: "Japan", Year: 2013, Status: "classic"}}}
 	c := &mapCache{data: map[string][]byte{}}
 	return st, c, newServer(st, c, "secret").routes()
 }
@@ -104,7 +104,7 @@ func TestGetMeme(t *testing.T) {
 }
 
 func TestCreateMeme(t *testing.T) {
-	const body = `{"title":"Тест","country_code":"ru","country_name":"Россия","year":2024,"status":"trend"}`
+	const body = `{"title":"Test","country_code":"ru","country_name":"Russia","year":2024,"status":"trend"}`
 
 	t.Run("without token", func(t *testing.T) {
 		st, _, h := setup()

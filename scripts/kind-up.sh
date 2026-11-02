@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Поднимает кластер kind и разворачивает в нём Мемопедию.
-# Запуск из корня репозитория: ./scripts/kind-up.sh
-# Повторный запуск безопасен: пересоберёт образ и обновит приложение.
+# Creates a kind cluster and deploys Meme-o-pedia into it.
+# Run from the repository root: ./scripts/kind-up.sh
+# Safe to run again: it rebuilds the image and updates the app.
 set -euo pipefail
 
 CLUSTER=memes
@@ -9,43 +9,43 @@ IMAGE=meme-o-pedia:dev
 METRICS_SERVER_VERSION=v0.7.2
 
 if [[ ! -f .env ]]; then
-  echo "Нет файла .env. Создайте его: cp .env.example .env и впишите свои пароли." >&2
+  echo "No .env file. Create it with: cp .env.example .env and set your passwords." >&2
   exit 1
 fi
 # shellcheck disable=SC1091
 source .env
-: "${DB_PASSWORD:?DB_PASSWORD не задан в .env}"
-: "${ADMIN_TOKEN:?ADMIN_TOKEN не задан в .env}"
+: "${DB_PASSWORD:?DB_PASSWORD is not set in .env}"
+: "${ADMIN_TOKEN:?ADMIN_TOKEN is not set in .env}"
 
 if ! kind get clusters | grep -qx "$CLUSTER"; then
-  echo "==> Создаю кластер $CLUSTER"
+  echo "==> Creating cluster $CLUSTER"
   kind create cluster --config deploy/kind-config.yaml
 
-  echo "==> Ставлю metrics-server (нужен для HPA)"
+  echo "==> Installing metrics-server (required by the HPA)"
   kubectl apply -f "https://github.com/kubernetes-sigs/metrics-server/releases/download/${METRICS_SERVER_VERSION}/components.yaml"
-  # В kind у kubelet самоподписанные сертификаты — разрешаем их metrics-server.
+  # kubelets in kind use self-signed certificates; let metrics-server accept them.
   kubectl -n kube-system patch deployment metrics-server --type=json \
     -p='[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--kubelet-insecure-tls"}]'
 fi
 
-echo "==> Собираю образ $IMAGE и загружаю его в узлы кластера"
+echo "==> Building image $IMAGE and loading it into the cluster nodes"
 docker build -t "$IMAGE" .
 kind load docker-image "$IMAGE" --name "$CLUSTER"
 
-echo "==> Создаю Secret с паролями из .env"
+echo "==> Creating the Secret with passwords from .env"
 kubectl apply -f deploy/k8s/namespace.yaml
 kubectl -n memes create secret generic meme-secrets \
   --from-literal=db-password="$DB_PASSWORD" \
   --from-literal=admin-token="$ADMIN_TOKEN" \
   --dry-run=client -o yaml | kubectl apply -f -
 
-echo "==> Применяю манифесты"
+echo "==> Applying manifests"
 kubectl apply -k deploy/k8s
-# Образ с тем же тегом мог измениться — перезапускаем поды, чтобы подхватили новый.
+# The image may have changed under the same tag: restart the pods so they pick it up.
 kubectl -n memes rollout restart deployment/api
 kubectl -n memes rollout status statefulset/postgres --timeout=180s
 kubectl -n memes rollout status deployment/api --timeout=180s
 
 echo
-echo "Готово: http://localhost:8080"
+echo "Done: http://localhost:8080"
 kubectl -n memes get pods -o wide

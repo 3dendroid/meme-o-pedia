@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Мемопедия</title>
+<title>Meme-o-pedia</title>
 <style>
   :root { --bg:#fff; --fg:#111; --muted:#555; --line:#111; --soft:#f2f2f2; --accent:#ffd60a; --blue:#2f5bea; }
   @media (prefers-color-scheme: dark) { :root { --bg:#121212; --fg:#f2f2f2; --muted:#b0b0b0; --line:#f2f2f2; --soft:#222; } }
@@ -32,15 +32,15 @@
 </head>
 <body>
 <main>
-  <h1>Мемо<span>педия</span></h1>
-  <label for="q" hidden>Поиск</label>
-  <input id="q" type="search" placeholder="Найти мем">
+  <h1>Meme-o-<span>pedia</span></h1>
+  <label for="q" hidden>Search</label>
+  <input id="q" type="search" placeholder="Search memes">
   <div class="chips" id="countries"></div>
-  <div class="bar"><span id="count"></span><button id="sort" type="button">Сначала новые</button></div>
+  <div class="bar"><span id="count"></span><button id="sort" type="button">Newest first</button></div>
   <ul id="list"></ul>
 </main>
 <script>
-const STATUS = { trend: 'В тренде', classic: 'Классика', outdated: 'Устарел' };
+const STATUS = { trend: 'Trending', classic: 'Classic', outdated: 'Outdated' };
 const state = { country: '', q: '', sort: 'new' };
 const $ = (id) => document.getElementById(id);
 
@@ -55,7 +55,7 @@ async function loadCountries() {
   const res = await fetch('/api/countries');
   const countries = await res.json();
   const box = $('countries');
-  const all = [{ code: '', name: 'Все' }, ...countries];
+  const all = [{ code: '', name: 'All' }, ...countries];
   for (const c of all) {
     const b = el('button', { type: 'button', className: 'chip' }, c.count ? `${c.name} · ${c.count}` : c.name);
     b.setAttribute('aria-pressed', String(c.code === state.country));
@@ -76,7 +76,7 @@ async function loadMemes() {
     const res = await fetch('/api/memes?' + params);
     if (!res.ok) throw new Error((await res.json()).error);
     const memes = await res.json();
-    $('count').textContent = 'Найдено: ' + memes.length;
+    $('count').textContent = memes.length + (memes.length === 1 ? ' meme' : ' memes');
     list.replaceChildren(...memes.map((m) => {
       const li = el('li');
       li.append(
@@ -88,7 +88,7 @@ async function loadMemes() {
       return li;
     }));
   } catch (e) {
-    list.replaceChildren(el('li', { className: 'error' }, 'Не удалось загрузить мемы: ' + e.message));
+    list.replaceChildren(el('li', { className: 'error' }, 'Could not load memes: ' + e.message));
   }
 }
 
@@ -99,7 +99,7 @@ $('q').oninput = (e) => {
 };
 $('sort').onclick = (e) => {
   state.sort = state.sort === 'new' ? 'old' : 'new';
-  e.target.textContent = state.sort === 'new' ? 'Сначала новые' : 'Сначала старые';
+  e.target.textContent = state.sort === 'new' ? 'Newest first' : 'Oldest first';
   loadMemes();
 };
 

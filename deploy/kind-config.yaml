@@ -1,6 +1,6 @@
-# Кластер из трёх узлов: один управляющий и два рабочих.
-# Порт 30080 (NodePort сервиса API) пробрасывается на порт 8080 виртуалки,
-# поэтому сайт открывается по адресу http://localhost:8080.
+# A three-node cluster: one control plane and two workers.
+# Port 30080 (the API service NodePort) is mapped to port 8080 of the host,
+# so the site opens at http://localhost:8080.
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 name: memes

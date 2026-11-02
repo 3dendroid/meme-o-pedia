@@ -1,59 +1,59 @@
 # meme-o-pedia
 
-Энциклопедия мемов: учебный проект для Kubernetes.
+A meme encyclopedia: a learning project for Kubernetes.
 
-Сайт показывает мемы с описанием, страной происхождения, годом появления и актуальностью;
-их можно фильтровать по стране, сортировать по дате и искать.
-Само приложение намеренно простое — основная цель проекта научиться запускать его в Kubernetes:
-база данных, секреты, кэш, пробы и автомасштабирование под нагрузкой.
+The site lists memes with a description, country of origin, year and relevance;
+you can filter them by country, sort by date and search.
+The app is deliberately simple. The real goal is to learn how to run it in Kubernetes:
+a database, secrets, a cache, probes and autoscaling under load.
 
-## Из чего состоит
+## What's inside
 
-| Часть | Что это | В Kubernetes |
+| Part | What it is | In Kubernetes |
 |---|---|---|
-| API + веб-страница | Go, один бинарник, образ ~20 МБ | Deployment + Service (NodePort) + HPA |
-| PostgreSQL 16 | хранит мемы | StatefulSet + PersistentVolumeClaim |
-| Redis 7 | кэширует ответы API на 60 секунд | Deployment |
-| Пароли | пароль базы и токен администратора | Secret `meme-secrets` (создаётся из `.env`, в git не попадает) |
+| API + web page | Go, a single binary, ~20 MB image | Deployment + Service (NodePort) + HPA |
+| PostgreSQL 16 | stores the memes | StatefulSet + PersistentVolumeClaim |
+| Redis 7 | caches API responses for 60 seconds | Deployment |
+| Passwords | database password and admin token | Secret `meme-secrets` (created from `.env`, never committed) |
 
 ```
 .
-├── main.go, handlers.go, store.go, cache.go   # код API
-├── handlers_test.go                           # тесты
-├── migrations/                                # схема базы и стартовые мемы (вшиты в бинарник)
-├── web/index.html                             # страница сайта
-├── Dockerfile                                 # двухэтапная сборка образа
-├── docker-compose.yml                         # запуск без Kubernetes
-├── deploy/kind-config.yaml                    # кластер kind из 3 узлов
-├── deploy/k8s/                                # манифесты Kubernetes
-├── scripts/kind-up.sh                         # поднять кластер и развернуть всё одной командой
-└── loadtest/k6.js                             # нагрузочный тест
+├── main.go, handlers.go, store.go, cache.go   # API code
+├── handlers_test.go                           # tests
+├── migrations/                                # database schema and starter memes (embedded in the binary)
+├── web/index.html                             # the web page
+├── Dockerfile                                 # two-stage image build
+├── docker-compose.yml                         # run without Kubernetes
+├── deploy/kind-config.yaml                    # three-node kind cluster
+├── deploy/k8s/                                # Kubernetes manifests
+├── scripts/kind-up.sh                         # create the cluster and deploy everything with one command
+└── loadtest/k6.js                             # load test
 ```
 
 ## API
 
-| Запрос | Что делает |
+| Request | What it does |
 |---|---|
-| `GET /api/memes?country=RU&q=кот&sort=old` | список мемов; все параметры необязательные, `sort=old` — сначала старые |
-| `GET /api/memes/{id}` | один мем |
-| `GET /api/countries` | страны и количество мемов в каждой |
-| `POST /api/memes` | добавить мем; нужен заголовок `Authorization: Bearer <ADMIN_TOKEN>` |
-| `GET /healthz` | liveness-проба: процесс жив |
-| `GET /readyz` | readiness-проба: база отвечает |
+| `GET /api/memes?country=US&q=cat&sort=old` | list memes; all parameters are optional, `sort=old` means oldest first |
+| `GET /api/memes/{id}` | a single meme |
+| `GET /api/countries` | countries and the number of memes in each |
+| `POST /api/memes` | add a meme; requires the `Authorization: Bearer <ADMIN_TOKEN>` header |
+| `GET /healthz` | liveness probe: the process is alive |
+| `GET /readyz` | readiness probe: the database answers |
 
-Заголовок ответа `X-Cache: HIT` или `MISS` показывает, пришёл ли ответ из Redis.
+The `X-Cache: HIT` or `MISS` response header shows whether the response came from Redis.
 
-Пример добавления мема:
+Adding a meme:
 
 ```bash
 curl -X POST http://localhost:8080/api/memes \
   -H "Authorization: Bearer $ADMIN_TOKEN" \
-  -d '{"title":"Новый мем","description":"Описание","country_code":"RU","country_name":"Россия","year":2026,"status":"trend"}'
+  -d '{"title":"New meme","description":"Description","country_code":"US","country_name":"United States","year":2026,"status":"trend"}'
 ```
 
-`status` — одно из `trend` (в тренде), `classic` (классика), `outdated` (устарел).
+`status` is one of `trend`, `classic` or `outdated`.
 
-## Подготовка Ubuntu
+## Preparing Ubuntu
 
 Docker:
 
@@ -65,9 +65,9 @@ curl -fsSL https://get.docker.com | sudo sh
 sudo usermod -aG docker $USER
 ```
 
-После этой команды выйдите из системы и войдите снова.
+Log out and back in after this command.
 
-kubectl и kind:
+kubectl and kind:
 
 ```bash
 curl -LO "https://dl.k8s.io/release/$(curl -Ls https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && sudo install kubectl /usr/local/bin/ && rm kubectl
@@ -77,48 +77,48 @@ curl -LO "https://dl.k8s.io/release/$(curl -Ls https://dl.k8s.io/release/stable.
 curl -Lo kind https://github.com/kubernetes-sigs/kind/releases/download/v0.29.0/kind-linux-amd64 && sudo install kind /usr/local/bin/ && rm kind
 ```
 
-Виртуалке нужно минимум 2 ядра и 4 ГБ памяти (лучше 8 ГБ).
+The machine needs at least 2 CPU cores and 4 GB of RAM (8 GB is better).
 
-## Шаг 1. Пароли
+## Step 1. Passwords
 
 ```bash
 cp .env.example .env
 ```
 
-Откройте `.env` и впишите свои значения. Этот файл в git не попадает.
+Open `.env` and set your own values. This file never goes to git.
 
-## Шаг 2. Запуск без Kubernetes (проверить, что всё работает)
+## Step 2. Run without Kubernetes (check that everything works)
 
 ```bash
 docker compose up --build
 ```
 
-Сайт: http://localhost:8080. Остановить и удалить данные:
+Site: http://localhost:8080. To stop and delete the data:
 
 ```bash
 docker compose down -v
 ```
 
-## Шаг 3. Запуск в Kubernetes (kind)
+## Step 3. Run in Kubernetes (kind)
 
 ```bash
 ./scripts/kind-up.sh
 ```
 
-Скрипт создаёт кластер из трёх узлов, ставит metrics-server (без него не работает HPA),
-собирает образ, загружает его в кластер, создаёт Secret из `.env` и применяет манифесты.
-Повторный запуск пересобирает образ и обновляет приложение.
+The script creates a three-node cluster, installs metrics-server (the HPA needs it),
+builds the image, loads it into the cluster, creates the Secret from `.env` and applies the manifests.
+Running it again rebuilds the image and updates the app.
 
-Сайт: http://localhost:8080.
+Site: http://localhost:8080, or `http://<machine IP>:8080` from another computer on the same network.
 
-Если виртуалка без графики, откройте сайт с вашего компьютера через SSH-туннель
-и затем зайдите в браузере на http://localhost:8080:
+If the machine has no desktop, open the site from your computer through an SSH tunnel
+and then go to http://localhost:8080 in your browser:
 
 ```bash
-ssh -L 8080:localhost:8080 user@адрес-виртуалки
+ssh -L 8080:localhost:8080 user@machine-address
 ```
 
-Полезные команды:
+Useful commands:
 
 ```bash
 kubectl -n memes get pods -o wide
@@ -132,37 +132,57 @@ kubectl -n memes logs deploy/api -f
 kubectl -n memes get hpa
 ```
 
-Удалить кластер целиком:
+Delete the whole cluster:
 
 ```bash
 kind delete cluster --name memes
 ```
 
-## Шаг 4. Нагрузка и автомасштабирование
+## Updating the starter memes
 
-В одном терминале следите за HPA и подами (экран обновляется каждые 2 секунды):
+The starter memes from `migrations/002_seed.sql` are loaded only into an empty table.
+After changing that file, update the app and reload the data
+(this deletes all memes, including ones added through the API):
+
+```bash
+git pull && ./scripts/kind-up.sh
+```
+
+```bash
+kubectl -n memes exec postgres-0 -- psql -U memes -c "TRUNCATE memes"
+```
+
+```bash
+kubectl -n memes rollout restart deployment/api
+```
+
+On startup the API sees an empty table and loads the memes again.
+
+## Step 4. Load and autoscaling
+
+In one terminal, watch the HPA and pods (the screen refreshes every 2 seconds):
 
 ```bash
 watch -n 2 kubectl -n memes get hpa,pods
 ```
 
-В другом запустите нагрузочный тест (k6 ставить не нужно, он запускается в Docker):
+In another terminal, run the load test (no need to install k6, it runs in Docker):
 
 ```bash
 docker run --rm -i --network host grafana/k6 run - < loadtest/k6.js
 ```
 
-Через минуту-две загрузка CPU превысит 60%, и HPA начнёт добавлять поды API (до 8).
-После окончания теста лишние поды удалятся примерно через 5 минут.
+After a minute or two the CPU load goes above 60% and the HPA starts adding API pods (up to 8).
+After the test ends, the extra pods are removed in about 5 minutes.
 
-## Что попробовать дальше
+## Things to try next
 
-- Удалите под API (`kubectl -n memes delete pod <имя>`) и посмотрите, как Deployment создаёт новый.
-- Удалите под Postgres: данные останутся, потому что они лежат на PersistentVolume.
-- Остановите Redis (`kubectl -n memes scale deploy/redis --replicas=0`): сайт продолжит работать, но медленнее.
-- Сравните результаты k6 с Redis и без него.
-- Поменяйте пароль в `.env`, перезапустите скрипт и разберитесь, почему Postgres его не принял
-  (подсказка: пароль задаётся только при первом создании базы).
+- Delete an API pod (`kubectl -n memes delete pod <name>`) and watch the Deployment create a new one.
+- Delete the Postgres pod: the data stays because it lives on a PersistentVolume.
+- Stop Redis (`kubectl -n memes scale deploy/redis --replicas=0`): the site keeps working, just without the cache.
+- Compare the k6 results with and without Redis.
+- Change the password in `.env`, rerun the script and figure out why Postgres rejects it
+  (hint: the password is set only when the database is first created).
 
-Следующие шаги проекта: картинки мемов в MinIO, CronJob для пересчёта актуальности,
-доступ через Ingress или Gateway API, метрики в Prometheus и Grafana, хранение секретов вне кластера.
+Next steps for the project: meme images in MinIO, a CronJob that recalculates relevance,
+access through Ingress or the Gateway API, metrics in Prometheus and Grafana, storing secrets outside the cluster.

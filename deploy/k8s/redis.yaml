@@ -1,4 +1,4 @@
-# Redis — только кэш: данные не нужно сохранять, поэтому хватает Deployment без диска.
+# Redis is only a cache: its data need not survive, so a Deployment without a disk is enough.
 apiVersion: v1
 kind: Service
 metadata:

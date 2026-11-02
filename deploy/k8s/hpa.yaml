@@ -1,6 +1,6 @@
-# Если средняя загрузка CPU подов API выше 60% от requests.cpu,
-# HPA добавляет поды (до 8), а когда нагрузка спадает — убирает.
-# Работает только при установленном metrics-server.
+# When the average CPU of the API pods goes above 60% of requests.cpu,
+# the HPA adds pods (up to 8) and removes them when the load drops.
+# Works only with metrics-server installed.
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:

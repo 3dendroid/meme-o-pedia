@@ -9,8 +9,8 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// Cache хранит готовые JSON-ответы списков. Если Redis недоступен,
-// API продолжает работать напрямую с базой — кэш только ускоряет.
+// Cache stores ready-made JSON responses for lists. If Redis is down,
+// the API keeps working directly with the database: the cache only speeds things up.
 type Cache interface {
 	Get(ctx context.Context, key string) ([]byte, bool)
 	Set(ctx context.Context, key string, val []byte)
@@ -28,8 +28,8 @@ const cacheTTL = 60 * time.Second
 type redisCache struct{ rdb *redis.Client }
 
 func newRedisCache(addr, password string) *redisCache {
-	// Короткие таймауты: если Redis упал, запрос быстро идёт в базу,
-	// а не ждёт соединения по 5 секунд (значение по умолчанию).
+	// Short timeouts: if Redis is down, the request quickly falls back to the database
+	// instead of waiting 5 seconds for a connection (the default).
 	return &redisCache{rdb: redis.NewClient(&redis.Options{
 		Addr:         addr,
 		Password:     password,
@@ -40,8 +40,8 @@ func newRedisCache(addr, password string) *redisCache {
 	})}
 }
 
-// Ключ включает «версию» данных. При добавлении мема версия растёт,
-// и все старые ключи просто перестают читаться (их удалит TTL).
+// The key includes a data "version". Adding a meme bumps the version,
+// so all old keys simply stop being read (TTL removes them later).
 func (c *redisCache) key(ctx context.Context, key string) (string, error) {
 	ver, err := c.rdb.Get(ctx, "memes:ver").Int()
 	if err == redis.Nil {

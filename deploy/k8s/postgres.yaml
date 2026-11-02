@@ -1,11 +1,11 @@
-# StatefulSet, а не Deployment: у базы постоянное имя (postgres-0)
-# и свой диск (PersistentVolumeClaim), который переживает перезапуск пода.
+# A StatefulSet, not a Deployment: the database gets a stable name (postgres-0)
+# and its own disk (PersistentVolumeClaim) that survives pod restarts.
 apiVersion: v1
 kind: Service
 metadata:
   name: postgres
 spec:
-  clusterIP: None # headless: DNS-имя postgres указывает прямо на под
+  clusterIP: None # headless: the DNS name postgres points straight at the pod
   selector:
     app: postgres
   ports:
