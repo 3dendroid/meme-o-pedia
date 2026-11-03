@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -276,5 +277,22 @@ func TestMetricsUseRoutePatterns(t *testing.T) {
 	do(h, "GET", "/api/memes?country=JP", "", "")
 	if testutil.ToFloat64(cacheRequests.WithLabelValues("hit")) != hits+1 {
 		t.Fatal("cache hit was not counted")
+	}
+}
+
+func TestRedisWarningsAreThrottled(t *testing.T) {
+	var buf bytes.Buffer
+	old := slog.Default()
+	slog.SetDefault(slog.New(slog.NewTextHandler(&buf, nil)))
+	defer slog.SetDefault(old)
+
+	// Nothing listens on this port, so every call fails.
+	c := newRedisCache("127.0.0.1:1", "")
+	for i := 0; i < 20; i++ {
+		c.Get(context.Background(), "k")
+		c.Set(context.Background(), "k", []byte("v"))
+	}
+	if n := strings.Count(buf.String(), "level=WARN"); n != 1 {
+		t.Fatalf("want 1 warning for 40 failures, got %d", n)
 	}
 }
