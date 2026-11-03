@@ -136,8 +136,9 @@ spec:
             httpGet: { path: /grafana/api/health, port: 3000 }
             periodSeconds: 5
           resources:
-            requests: { cpu: 100m, memory: 128Mi }
-            limits: { memory: 512Mi }
+            # Grafana was OOMKilled at 512Mi on startup, so it gets more room.
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { memory: 1Gi }
           volumeMounts:
             - name: datasources
               mountPath: /etc/grafana/provisioning/datasources
