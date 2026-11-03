@@ -157,7 +157,7 @@ func (s *pgStore) List(ctx context.Context, f Filter) ([]Meme, error) {
 		SELECT `+memeColumns+` FROM memes
 		WHERE ($1 = '' OR country_code = $1)
 		  AND ($2 = '' OR title ILIKE '%' || $2 || '%' OR description ILIKE '%' || $2 || '%')
-		ORDER BY `+order+` LIMIT 500`, f.Country, f.Query)
+		ORDER BY `+order+` LIMIT 2000`, f.Country, f.Query)
 	if err != nil {
 		return nil, err
 	}
