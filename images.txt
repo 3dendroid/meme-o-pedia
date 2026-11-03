@@ -12,7 +12,8 @@ Doge | https://pngimg.com/uploads/doge_meme/doge_meme_PNG3.png
 # The pictures below are the cover images of the Know Your Meme entries (knowyourmeme.com).
 # Know Your Meme does not license them: they belong to their authors. They are fine for a private
 # learning cluster, but do not publish them on a public site.
-# Not found on any available site: Vzhuh.
+# Not found on any available site: Vzhuh. Its picture was uploaded by hand
+# (see "Meme pictures" in README.md).
 # Wednesday Dance uses the picture of the 2022 "Wednesday" series entry: the dance entry's own
 # cover is from the 1966 series.
 # Italian Brainrot uses the Tralalero Tralala entry, the best-known character of the trend.
