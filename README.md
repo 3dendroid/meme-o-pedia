@@ -153,9 +153,10 @@ kind delete cluster --name memes
 
 ## Updating the starter memes
 
-`migrations/003_more_memes.sql` holds more memes collected from Know Your Meme
-(the year and country come from each entry). It runs on every start and adds only the memes
-whose titles are not in the table yet, so `git pull && ./scripts/kind-up.sh` is enough to get new ones.
+`migrations/003_more_memes.sql` and `004_even_more_memes.sql` hold more memes collected from
+Know Your Meme (the year comes from each entry). Every file from `003` on runs on every start, in name order,
+and adds only the memes whose titles are not in the table yet, so `git pull && ./scripts/kind-up.sh`
+is enough to get new ones. To add memes later, put them into a new file such as `005_....sql`.
 
 The first starter memes from `migrations/002_seed.sql` are loaded only into an empty table.
 After changing that file, update the app and reload the data
