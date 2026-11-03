@@ -13,3 +13,16 @@ resources:
   - hpa.yaml
   - cronjob.yaml
   - gateway.yaml
+  - monitoring.yaml
+
+# Config files become ConfigMaps. The generated name gets a hash of the contents,
+# so changing a file makes Kubernetes restart the pods that use it.
+configMapGenerator:
+  - name: prometheus-config
+    files: [monitoring/prometheus.yml]
+  - name: grafana-datasources
+    files: [monitoring/datasources.yaml]
+  - name: grafana-dashboard-providers
+    files: [monitoring/dashboard-providers.yaml]
+  - name: grafana-dashboards
+    files: [monitoring/memes-dashboard.json]

@@ -18,6 +18,7 @@ import (
 
 type config struct {
 	Port        string
+	MetricsPort string
 	DatabaseURL string
 	RedisAddr   string
 	RedisPass   string
@@ -47,6 +48,7 @@ func loadConfig() (config, error) {
 	}
 	cfg := config{
 		Port:        env("PORT", "8080"),
+		MetricsPort: env("METRICS_PORT", "9090"),
 		DatabaseURL: dsn.String(),
 		RedisAddr:   os.Getenv("REDIS_ADDR"), // empty means run without a cache
 		RedisPass:   os.Getenv("REDIS_PASSWORD"),
@@ -115,6 +117,19 @@ func main() {
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
+	// A second server for Prometheus on its own port, kept out of the public API.
+	metricsSrv := &http.Server{
+		Addr:              ":" + cfg.MetricsPort,
+		Handler:           metricsHandler(),
+		ReadHeaderTimeout: 5 * time.Second,
+	}
+	go func() {
+		log.Info("metrics listening", "addr", metricsSrv.Addr)
+		if err := metricsSrv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Error("metrics server", "err", err)
+		}
+	}()
+
 	go func() {
 		log.Info("listening", "addr", srv.Addr)
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -130,4 +145,5 @@ func main() {
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	_ = srv.Shutdown(shutdownCtx)
+	_ = metricsSrv.Shutdown(shutdownCtx)
 }
