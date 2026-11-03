@@ -11,7 +11,8 @@ a database, secrets, a cache, probes and autoscaling under load.
 
 | Part | What it is | In Kubernetes |
 |---|---|---|
-| API + web page | Go, a single binary, ~20 MB image | Deployment + Service (NodePort) + HPA |
+| API + web page | Go, a single binary, ~20 MB image | Deployment + Service + HPA |
+| Entry point | Envoy Gateway, an implementation of the Gateway API | Gateway + HTTPRoute (NodePort 30080) |
 | PostgreSQL 16 | stores the memes | StatefulSet + PersistentVolumeClaim |
 | Redis 7 | caches API responses for 60 seconds | Deployment |
 | SeaweedFS | S3-compatible storage for meme pictures | StatefulSet + PersistentVolumeClaim |
@@ -30,6 +31,7 @@ a database, secrets, a cache, probes and autoscaling under load.
 ├── docker-compose.yml                         # run without Kubernetes
 ├── deploy/kind-config.yaml                    # three-node kind cluster
 ├── deploy/k8s/                                # Kubernetes manifests
+├── deploy/gateway-class.yaml                  # cluster-wide GatewayClass for Envoy Gateway
 ├── scripts/kind-up.sh                         # create the cluster and deploy everything with one command
 └── loadtest/k6.js                             # load test
 ```
@@ -218,7 +220,40 @@ Refresh the site: the picture replaces the colored cover. Uploading again replac
 If you change the storage keys in `.env`, rerun the script and restart SeaweedFS so it rereads them:
 `kubectl -n memes rollout restart statefulset/seaweedfs`.
 
-## Step 6. Load and autoscaling
+## Step 6. The entry point (Gateway API)
+
+Requests from outside go through a Gateway instead of straight to the API:
+
+```
+browser -> host port 8080 -> kind port mapping -> NodePort 30080 -> Envoy (Gateway) -> HTTPRoute -> api Service
+```
+
+- `deploy/gateway-class.yaml`: the GatewayClass `envoy`, handled by Envoy Gateway.
+- `deploy/k8s/gateway.yaml`: the Gateway (an HTTP listener on port 80), the HTTPRoute that sends
+  everything to the `api` Service, and the EnvoyProxy settings that expose Envoy on NodePort 30080.
+- The `api` Service is now `ClusterIP`: it is reachable only inside the cluster.
+
+The script installs Envoy Gateway on every run (the install is safe to repeat).
+
+Check the state:
+
+```bash
+kubectl -n memes get gateway,httproute
+```
+
+`PROGRAMMED: True` on the Gateway means Envoy is running and accepts traffic.
+The Envoy pods and their Service live in the `envoy-gateway-system` namespace:
+
+```bash
+kubectl -n envoy-gateway-system get pods,svc
+```
+
+Try routing by name: add `hostnames: ["memes.local"]` to the HTTPRoute, apply it, and check that
+`curl localhost:8080` now gets 404 while `curl -H "Host: memes.local" localhost:8080` works.
+To open `http://memes.local:8080` in a browser, add the machine IP and `memes.local` to the hosts file
+(`C:\Windows\System32\drivers\etc\hosts` on Windows).
+
+## Step 7. Load and autoscaling
 
 In one terminal, watch the HPA and pods (the screen refreshes every 2 seconds):
 
@@ -244,5 +279,4 @@ After the test ends, the extra pods are removed in about 5 minutes.
 - Change the password in `.env`, rerun the script and figure out why Postgres rejects it
   (hint: the password is set only when the database is first created).
 
-Next steps for the project: meme images in MinIO, a CronJob that recalculates relevance,
-access through Ingress or the Gateway API, metrics in Prometheus and Grafana, storing secrets outside the cluster.
+Next steps for the project: metrics in Prometheus and Grafana, HTTPS on the Gateway, storing secrets outside the cluster.
