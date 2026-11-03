@@ -15,3 +15,6 @@ ALTER TABLE memes ADD COLUMN IF NOT EXISTS image_key TEXT NOT NULL DEFAULT '';
 
 CREATE INDEX IF NOT EXISTS memes_country_idx ON memes (country_code);
 CREATE INDEX IF NOT EXISTS memes_year_idx ON memes (year);
+
+-- Titles are unique, so 003_more_memes.sql can skip memes that already exist.
+CREATE UNIQUE INDEX IF NOT EXISTS memes_title_idx ON memes (title);

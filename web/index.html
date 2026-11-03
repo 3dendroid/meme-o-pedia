@@ -215,6 +215,9 @@ function initials(title) {
   return (words.length > 1 ? words[0][0] + words[1][0] : (words[0] || '?').slice(0, 2)).toUpperCase();
 }
 
+// ZZ marks memes born online with no single country of origin.
+const countryLabel = (code) => (code === 'ZZ' ? 'WEB' : code);
+
 function card(m) {
   const c = el('article', 'card');
   const cover = el('div', 'cover');
@@ -226,10 +229,10 @@ function card(m) {
     img.src = m.image_url;
     img.alt = m.title;
     img.loading = 'lazy';
-    cover.append(img, el('span', 'code', m.country_code));
+    cover.append(img, el('span', 'code', countryLabel(m.country_code)));
   } else {
     cover.setAttribute('aria-hidden', 'true');
-    cover.append(el('span', 'initials', initials(m.title)), el('span', 'code', m.country_code));
+    cover.append(el('span', 'initials', initials(m.title)), el('span', 'code', countryLabel(m.country_code)));
   }
 
   const body = el('div', 'body');
@@ -276,7 +279,7 @@ async function loadCountries() {
   const countries = await res.json();
   const total = countries.reduce((n, c) => n + c.count, 0);
   $('stat-memes').textContent = total;
-  $('stat-countries').textContent = countries.length;
+  $('stat-countries').textContent = countries.filter((c) => c.code !== 'ZZ').length;
 
   const box = $('countries');
   for (const c of [{ code: '', name: 'All', count: total }, ...countries]) {

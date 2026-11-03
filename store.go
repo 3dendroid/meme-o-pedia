@@ -96,6 +96,10 @@ func (s *pgStore) Migrate(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	more, err := migrations.ReadFile("migrations/003_more_memes.sql")
+	if err != nil {
+		return err
+	}
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return err
@@ -118,6 +122,15 @@ func (s *pgStore) Migrate(ctx context.Context) error {
 		}
 		slog.Info("database seeded")
 	}
+	// 003 runs on every start: it adds only the memes whose titles are missing,
+	// so it also fills databases that were seeded before the file existed.
+	tag, err := tx.Exec(ctx, string(more))
+	if err != nil {
+		return fmt.Errorf("more memes: %w", err)
+	}
+	if tag.RowsAffected() > 0 {
+		slog.Info("memes added", "count", tag.RowsAffected())
+	}
 	return tx.Commit(ctx)
 }
 
@@ -135,7 +148,7 @@ func (s *pgStore) List(ctx context.Context, f Filter) ([]Meme, error) {
 		SELECT `+memeColumns+` FROM memes
 		WHERE ($1 = '' OR country_code = $1)
 		  AND ($2 = '' OR title ILIKE '%' || $2 || '%' OR description ILIKE '%' || $2 || '%')
-		ORDER BY `+order+` LIMIT 100`, f.Country, f.Query)
+		ORDER BY `+order+` LIMIT 500`, f.Country, f.Query)
 	if err != nil {
 		return nil, err
 	}

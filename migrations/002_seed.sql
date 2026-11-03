@@ -25,7 +25,7 @@ INSERT INTO memes (title, description, country_code, country_name, year, status)
 ('But That''s None of My Business', 'Kermit the Frog sipping tea after a passive-aggressive remark.', 'US', 'United States', 2014, 'classic'),
 ('Drakeposting', 'Two frames from "Hotline Bling": Drake rejects one thing and approves another.', 'CA', 'Canada', 2015, 'classic'),
 ('The Dress', 'A photo of a dress that some people see as blue and black and others as white and gold.', 'GB', 'United Kingdom', 2015, 'classic'),
-('Vzhuh', 'A drawn cat that goes "vzhuh" and grants your wish.', 'RU', 'Russia', 2016, 'outdated'),
+('Vzhuh', 'A cat in a wizard hat waves a drawn magic wand: "vzhuh", and your wish comes true.', 'RU', 'Russia', 2016, 'outdated'),
 ('Roll Safe', 'A guy tapping his temple: "You can''t be late if you don''t show up".', 'GB', 'United Kingdom', 2016, 'classic'),
 ('Confused Math Lady', 'A Brazilian soap opera character surrounded by formulas, the face of confusion.', 'BR', 'Brazil', 2016, 'classic'),
 ('Pen-Pineapple-Apple-Pen', 'Pikotaro''s short absurd song about combining a pen with fruit.', 'JP', 'Japan', 2016, 'outdated'),
