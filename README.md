@@ -235,6 +235,9 @@ Fill in the links in `images.txt` (`Meme title | https://direct-link-to-picture.
 ./scripts/upload-images.sh
 ```
 
+Memes that already have a picture are skipped, so the script is safe to run again after adding lines.
+To replace existing pictures, run `./scripts/upload-images.sh --force`.
+
 If you change the storage keys in `.env`, rerun the script and restart SeaweedFS so it rereads them:
 `kubectl -n memes rollout restart statefulset/seaweedfs`.
 

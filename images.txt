@@ -1,17 +1,20 @@
 # Pictures for scripts/upload-images.sh. Format: Meme title | direct link to the picture.
 # Lines starting with # are skipped.
 #
-# Already uploaded: Doge (your own picture) and these pictures from pngimg.com
-# (license CC BY-NC 4.0: non-commercial use, credit the source). Uncomment to upload again.
-# Trollface | https://pngimg.com/uploads/trollface/trollface_PNG19.png
-# Squid Game | https://pngimg.com/uploads/squid_game/squid_game_PNG3.png
-# Labubu | https://pngimg.com/uploads/labubu/labubu_PNG10.png
+# The script skips memes that already have a picture; run it with --force to replace them.
+#
+# Pictures from pngimg.com (license CC BY-NC 4.0: non-commercial use, credit the source).
+Trollface | https://pngimg.com/uploads/trollface/trollface_PNG19.png
+Squid Game | https://pngimg.com/uploads/squid_game/squid_game_PNG3.png
+Labubu | https://pngimg.com/uploads/labubu/labubu_PNG10.png
+Doge | https://pngimg.com/uploads/doge_meme/doge_meme_PNG3.png
 #
 # The pictures below are the cover images of the Know Your Meme entries (knowyourmeme.com).
 # Know Your Meme does not license them: they belong to their authors. They are fine for a private
 # learning cluster, but do not publish them on a public site.
-# Not found there: Vzhuh. Wednesday Dance is left out: the entry there is a different dance
-# (from the old Addams Family films, not the 2022 series).
+# Not found on any available site: Vzhuh.
+# Wednesday Dance uses the picture of the 2022 "Wednesday" series entry: the dance entry's own
+# cover is from the 1966 series.
 # Italian Brainrot uses the Tralalero Tralala entry, the best-known character of the trend.
 Dancing Baby | https://i.kym-cdn.com/entries/icons/original/000/000/375/870.jpg
 Pepe the Frog | https://i.kym-cdn.com/entries/icons/original/000/017/618/pepefroggie.jpg
@@ -60,3 +63,4 @@ Tung Tung Tung Sahur | https://i.kym-cdn.com/entries/icons/original/000/053/559/
 Aura Farming | https://i.kym-cdn.com/entries/icons/original/000/052/946/Aura_Farming_cover.jpg
 6-7 | https://i.kym-cdn.com/entries/icons/original/000/053/028/67-meme-header.jpg
 Clanker | https://i.kym-cdn.com/entries/icons/original/000/054/685/clankerisourword.jpg
+Wednesday Dance | https://i.kym-cdn.com/entries/icons/original/000/042/844/MV5BNmQ5ZWRkZGItYWQ2ZC00YWI0LTlhZTAtZDljZDc1NjZiOTllXkEyXkFqcGdeQWRpZWdtb25n._V1_.jpg

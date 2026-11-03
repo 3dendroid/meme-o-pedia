@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Downloads meme pictures from the internet and uploads them through the API.
-# Run from the repository root: ./scripts/upload-images.sh [list-file]
+# Run from the repository root: ./scripts/upload-images.sh [--force] [list-file]
+# Memes that already have a picture are skipped; --force uploads them again.
 #
 # The list file (default: images.txt) has one meme per line:
 #   Meme title | https://example.com/picture.png
@@ -8,6 +9,11 @@
 # Empty lines and lines starting with # are skipped.
 set -euo pipefail
 
+FORCE=false
+if [[ "${1:-}" == "--force" ]]; then
+  FORCE=true
+  shift
+fi
 LIST=${1:-images.txt}
 BASE_URL=${BASE_URL:-http://localhost:8080}
 
@@ -32,6 +38,7 @@ tmp=$(mktemp)
 trap 'rm -f "$tmp"' EXIT
 ok=0
 failed=0
+kept=0
 
 while IFS='|' read -r title url; do
   # Trim spaces around both parts (titles may contain quotes and apostrophes).
@@ -44,14 +51,23 @@ while IFS='|' read -r title url; do
     continue
   fi
 
-  # Find the meme ID by its exact title.
-  id=$(curl -sf --get "$BASE_URL/api/memes" --data-urlencode "q=$title" |
+  # Find the meme by its exact title: prints "<id> <yes|no>" (does it have a picture).
+  # Reset first: when nothing is found, read leaves the values from the previous line.
+  id=""
+  has_image=""
+  read -r id has_image < <(curl -sf --get "$BASE_URL/api/memes" --data-urlencode "q=$title" |
     python3 -c 'import json, sys
 title = sys.argv[1].lower()
-print(next((m["id"] for m in json.load(sys.stdin) if m["title"].lower() == title), ""))' "$title")
-  if [[ -z "$id" ]]; then
+m = next((m for m in json.load(sys.stdin) if m["title"].lower() == title), None)
+print(str(m["id"]) + (" yes" if m["image_url"] else " no") if m else "")' "$title") || true
+  if [[ -z "${id:-}" ]]; then
     echo "SKIP  $title: no meme with this title"
     failed=$((failed + 1))
+    continue
+  fi
+  if [[ "$has_image" == "yes" && "$FORCE" == false ]]; then
+    echo "HAS   $title (id $id): already has a picture, use --force to replace it"
+    kept=$((kept + 1))
     continue
   fi
 
@@ -74,4 +90,4 @@ print(next((m["id"] for m in json.load(sys.stdin) if m["title"].lower() == title
 done < "$LIST"
 
 echo
-echo "Uploaded: $ok, failed or skipped: $failed"
+echo "Uploaded: $ok, already had a picture: $kept, failed or skipped: $failed"
