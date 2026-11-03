@@ -154,6 +154,23 @@
   .yt svg { flex-shrink: 0; }
   .yt.search { font-weight: 500; color: var(--muted); }
 
+  /* Video player window */
+  .player {
+    width: min(960px, calc(100vw - 32px)); padding: 0; border: 0; border-radius: 14px;
+    background: var(--surface); color: var(--ink); overflow: hidden;
+  }
+  .player::backdrop { background: rgb(0 0 0 / .75); }
+  .player .frame { position: relative; aspect-ratio: 16 / 9; background: #000; }
+  .player iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+  .player .bar { display: flex; align-items: center; gap: 12px; padding: 12px 16px; }
+  .player .bar b { flex: 1; min-width: 0; font: 800 18px var(--font-display); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .player .bar a { color: var(--muted); font-size: 14px; white-space: nowrap; }
+  .player .close {
+    width: 40px; height: 40px; flex-shrink: 0; border: 1px solid var(--line); border-radius: 10px;
+    background: transparent; color: var(--ink); font-size: 22px; line-height: 1; cursor: pointer;
+  }
+  .player .close:hover { border-color: var(--ink); }
+
   .empty { padding: 64px 0; text-align: center; color: var(--muted); }
   .empty b { display: block; font: 800 24px var(--font-display); color: var(--ink); margin-bottom: 6px; }
   .error { color: #c62828; }
@@ -199,6 +216,15 @@
 
   <main id="list"></main>
 
+  <dialog class="player" id="player" aria-label="Video player">
+    <div class="frame" id="player-frame"></div>
+    <div class="bar">
+      <b id="player-title"></b>
+      <a id="player-link" href="#" target="_blank" rel="noopener">Open on YouTube</a>
+      <button class="close" id="player-close" type="button" aria-label="Close video" autofocus>×</button>
+    </div>
+  </dialog>
+
   <footer>Dates and countries are approximate. Statuses reflect popularity at the time the entries were written.
     Pictures: <a href="https://pngimg.com/">pngimg.com</a> (<a href="https://pngimg.com/license">CC BY-NC 4.0</a>) and <a href="https://knowyourmeme.com/">Know Your Meme</a>; they belong to their authors.</footer>
 </div>
@@ -226,7 +252,30 @@ function initials(title) {
   return (words.length > 1 ? words[0][0] + words[1][0] : (words[0] || '?').slice(0, 2)).toUpperCase();
 }
 
-// A known video opens directly; otherwise the link searches YouTube for the meme.
+// The video player: one iframe, created when a video is opened and removed on close,
+// so nothing loads from YouTube until the visitor asks and playback stops on close.
+// youtube-nocookie.com is YouTube's privacy-enhanced mode: no tracking cookies before play.
+const player = $('player');
+function openVideo(m, id) {
+  const f = document.createElement('iframe');
+  f.src = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0`;
+  f.title = m.title;
+  f.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+  f.allowFullscreen = true;
+  f.referrerPolicy = 'strict-origin-when-cross-origin';
+  $('player-frame').replaceChildren(f);
+  $('player-title').textContent = m.title;
+  $('player-link').href = m.video_url; // if the author disabled embedding, this still works
+  player.showModal();
+}
+player.addEventListener('close', () => $('player-frame').replaceChildren());
+$('player-close').onclick = () => player.close();
+// The close button gets focus on open (autofocus), so Esc closes the window. Once the visitor
+// clicks into the video, keys go to YouTube's player; the × button and the backdrop still close it.
+// A click on the dark backdrop (outside the window) closes it too.
+player.addEventListener('click', (e) => { if (e.target === player) player.close(); });
+
+// A known video plays on the site; otherwise the link searches YouTube for the meme.
 const YT_WATCH = /^https:\/\/www\.youtube\.com\/watch\?v=[A-Za-z0-9_-]{11}$/;
 function youtubeLink(m) {
   const a = el('a', 'yt');
@@ -237,8 +286,14 @@ function youtubeLink(m) {
   icon.setAttribute('aria-hidden', 'true');
   icon.innerHTML = '<rect x="2" y="5" width="20" height="14" rx="4" fill="currentColor" opacity=".15"/><path d="M10 9l5 3-5 3z" fill="currentColor"/>';
   if (YT_WATCH.test(m.video_url)) {
+    // Still a real link: middle click or "open in new tab" go to YouTube, a plain click plays here.
     a.href = m.video_url;
-    a.append(icon, document.createTextNode('Watch on YouTube'));
+    a.append(icon, document.createTextNode('Play video'));
+    a.onclick = (e) => {
+      if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey) return;
+      e.preventDefault();
+      openVideo(m, m.video_url.slice(-11));
+    };
   } else {
     a.href = 'https://www.youtube.com/results?search_query=' + encodeURIComponent(m.title + ' meme');
     a.classList.add('search');

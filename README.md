@@ -160,8 +160,10 @@ is enough to get new ones. To add memes later, put them into a new file such as 
 
 `migrations/005_videos.sql` gives memes a YouTube video: the video embedded in each meme's
 Know Your Meme entry (the Origin section first), checked to still exist on YouTube.
-It fills only memes without a video, so a video set by hand stays. Cards show "Watch on YouTube"
-for those memes and a "Search on YouTube" link for the rest. To set a video by hand:
+It fills only memes without a video, so a video set by hand stays. For those memes a card shows
+"Play video": the video plays in a window on the site, through YouTube's embedded player in its
+privacy-enhanced mode (youtube-nocookie.com, no tracking cookies before play). The rest get a
+"Search on YouTube" link. To set a video by hand:
 
 ```bash
 kubectl -n memes exec postgres-0 -- psql -U memes -c "UPDATE memes SET video_id = 'VIDEO_ID' WHERE title = 'Meme title'"
