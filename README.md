@@ -14,13 +14,15 @@ a database, secrets, a cache, probes and autoscaling under load.
 | API + web page | Go, a single binary, ~20 MB image | Deployment + Service (NodePort) + HPA |
 | PostgreSQL 16 | stores the memes | StatefulSet + PersistentVolumeClaim |
 | Redis 7 | caches API responses for 60 seconds | Deployment |
+| SeaweedFS | S3-compatible storage for meme pictures | StatefulSet + PersistentVolumeClaim |
 | Relevance job | once a day turns old "trend" memes into "classic" | CronJob |
-| Passwords | database password and admin token | Secret `meme-secrets` (created from `.env`, never committed) |
+| Passwords | database password, admin token, storage keys | Secrets `meme-secrets` and `seaweedfs-s3` (created from `.env`, never committed) |
 
 ```
 .
 ├── main.go, handlers.go, store.go, cache.go   # API code
 ├── recalc.go                                  # the daily relevance job
+├── images.go                                  # picture storage over S3
 ├── handlers_test.go                           # tests
 ├── migrations/                                # database schema and starter memes (embedded in the binary)
 ├── web/index.html                             # the web page
@@ -40,6 +42,8 @@ a database, secrets, a cache, probes and autoscaling under load.
 | `GET /api/memes/{id}` | a single meme |
 | `GET /api/countries` | countries and the number of memes in each |
 | `POST /api/memes` | add a meme; requires the `Authorization: Bearer <ADMIN_TOKEN>` header |
+| `PUT /api/memes/{id}/image` | upload a picture (PNG, JPEG, GIF or WebP, up to 5 MB); requires the admin token |
+| `GET /images/{key}` | a picture; the link comes from the meme's `image_url` |
 | `GET /healthz` | liveness probe: the process is alive |
 | `GET /readyz` | readiness probe: the database answers |
 
@@ -186,7 +190,35 @@ kubectl -n memes logs job/relevance-manual
 
 To run it by hand again, delete the old job first: `kubectl -n memes delete job relevance-manual`.
 
-## Step 5. Load and autoscaling
+## Step 5. Meme pictures (SeaweedFS)
+
+Pictures are stored in SeaweedFS, an S3-compatible storage that runs in the cluster.
+The API saves uploads there and serves them at `/images/...`; SeaweedFS itself is not exposed outside the cluster.
+Its access keys come from `.env` (`S3_ACCESS_KEY`, `S3_SECRET_KEY`, letters and digits only):
+the script puts them into the `meme-secrets` Secret for the API and into the `seaweedfs-s3` Secret,
+which SeaweedFS reads as a file (`/etc/seaweedfs/s3.json`).
+
+The SeaweedFS image is about 700 MB, so check free disk space first (`df -h /`).
+
+Find the meme ID:
+
+```bash
+curl -s "localhost:8080/api/memes?q=doge" | grep -o '"id":[0-9]*'
+```
+
+Upload a picture you have the right to use (here `doge.jpg` for meme 15):
+
+```bash
+curl -X PUT localhost:8080/api/memes/15/image -H "Authorization: Bearer $ADMIN_TOKEN" --data-binary @doge.jpg
+```
+
+The API checks the file contents, not its name: only PNG, JPEG, GIF and WebP up to 5 MB are accepted.
+Refresh the site: the picture replaces the colored cover. Uploading again replaces the picture.
+
+If you change the storage keys in `.env`, rerun the script and restart SeaweedFS so it rereads them:
+`kubectl -n memes rollout restart statefulset/seaweedfs`.
+
+## Step 6. Load and autoscaling
 
 In one terminal, watch the HPA and pods (the screen refreshes every 2 seconds):
 

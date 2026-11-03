@@ -22,6 +22,10 @@ type config struct {
 	RedisAddr   string
 	RedisPass   string
 	AdminToken  string
+	S3Endpoint  string
+	S3Bucket    string
+	S3AccessKey string
+	S3SecretKey string
 }
 
 func env(key, def string) string {
@@ -47,6 +51,10 @@ func loadConfig() (config, error) {
 		RedisAddr:   os.Getenv("REDIS_ADDR"), // empty means run without a cache
 		RedisPass:   os.Getenv("REDIS_PASSWORD"),
 		AdminToken:  os.Getenv("ADMIN_TOKEN"),
+		S3Endpoint:  os.Getenv("S3_ENDPOINT"), // empty means run without pictures
+		S3Bucket:    env("S3_BUCKET", "memes"),
+		S3AccessKey: os.Getenv("S3_ACCESS_KEY"),
+		S3SecretKey: os.Getenv("S3_SECRET_KEY"),
 	}
 	if os.Getenv("DB_PASSWORD") == "" {
 		return cfg, errors.New("DB_PASSWORD is not set")
@@ -95,9 +103,15 @@ func main() {
 		os.Exit(1)
 	}
 
+	var images ImageStore = noImages{}
+	if cfg.S3Endpoint != "" {
+		images = newS3Images(cfg.S3Endpoint, cfg.S3Bucket, cfg.S3AccessKey, cfg.S3SecretKey)
+		log.Info("image storage enabled", "endpoint", cfg.S3Endpoint, "bucket", cfg.S3Bucket)
+	}
+
 	srv := &http.Server{
 		Addr:              ":" + cfg.Port,
-		Handler:           newServer(store, cache, cfg.AdminToken).routes(),
+		Handler:           newServer(store, cache, images, cfg.AdminToken).routes(),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 

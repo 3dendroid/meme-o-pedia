@@ -121,9 +121,13 @@
     background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
   }
   .cover {
+    position: relative;
     height: 112px; display: flex; align-items: flex-end; justify-content: space-between; padding: 12px 14px;
     color: var(--cover-ink);
   }
+  .cover.photo { height: 200px; justify-content: flex-end; }
+  .cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .cover .code { position: relative; }
   .cover .initials { font: 800 44px/1 var(--font-display); letter-spacing: -0.03em; opacity: .85; }
   .cover .code {
     font: 500 12px var(--font-mono); padding: 3px 7px; border-radius: 6px;
@@ -212,8 +216,18 @@ function card(m) {
   const c = el('article', 'card');
   const cover = el('div', 'cover');
   cover.style.background = `hsl(${hue(m.title)} var(--cover-s) var(--cover-l))`;
-  cover.setAttribute('aria-hidden', 'true');
-  cover.append(el('span', 'initials', initials(m.title)), el('span', 'code', m.country_code));
+  if (m.image_url) {
+    // A real picture replaces the initials; the colored background shows while it loads.
+    cover.classList.add('photo');
+    const img = el('img');
+    img.src = m.image_url;
+    img.alt = m.title;
+    img.loading = 'lazy';
+    cover.append(img, el('span', 'code', m.country_code));
+  } else {
+    cover.setAttribute('aria-hidden', 'true');
+    cover.append(el('span', 'initials', initials(m.title)), el('span', 'code', m.country_code));
+  }
 
   const body = el('div', 'body');
   const meta = el('div', 'meta');

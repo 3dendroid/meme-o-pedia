@@ -6,6 +6,8 @@ import (
 	"embed"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
 	"io/fs"
 	"log/slog"
 	"net/http"
@@ -21,11 +23,12 @@ var webFiles embed.FS
 type server struct {
 	store      Store
 	cache      Cache
+	images     ImageStore
 	adminToken string
 }
 
-func newServer(store Store, cache Cache, adminToken string) *server {
-	return &server{store: store, cache: cache, adminToken: adminToken}
+func newServer(store Store, cache Cache, images ImageStore, adminToken string) *server {
+	return &server{store: store, cache: cache, images: images, adminToken: adminToken}
 }
 
 func (s *server) routes() http.Handler {
@@ -37,6 +40,8 @@ func (s *server) routes() http.Handler {
 	mux.HandleFunc("GET /api/memes/{id}", s.getMeme)
 	mux.HandleFunc("GET /api/countries", s.listCountries)
 	mux.HandleFunc("POST /api/memes", s.createMeme)
+	mux.HandleFunc("PUT /api/memes/{id}/image", s.uploadImage)
+	mux.HandleFunc("GET /images/{key}", s.getImage)
 
 	// liveness: the process is alive. readiness: it can take traffic (the database answers).
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
@@ -151,6 +156,101 @@ func (s *server) createMeme(w http.ResponseWriter, r *http.Request) {
 	}
 	s.cache.Invalidate(r.Context())
 	writeJSON(w, http.StatusCreated, m)
+}
+
+const maxImageSize = 5 << 20 // 5 MB
+
+// Allowed picture types and the file extension used in the storage key.
+var imageTypes = map[string]string{
+	"image/png":  ".png",
+	"image/jpeg": ".jpg",
+	"image/gif":  ".gif",
+	"image/webp": ".webp",
+}
+
+var imageKey = regexp.MustCompile(`^[0-9]+-[0-9]+\.(png|jpg|gif|webp)$`)
+
+func (s *server) uploadImage(w http.ResponseWriter, r *http.Request) {
+	if !s.isAdmin(r) {
+		writeError(w, http.StatusUnauthorized, "admin token required")
+		return
+	}
+	id, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil || id <= 0 {
+		writeError(w, http.StatusBadRequest, "id must be a positive number")
+		return
+	}
+	if _, err := s.store.Get(r.Context(), id); errors.Is(err, ErrNotFound) {
+		writeError(w, http.StatusNotFound, "meme not found")
+		return
+	} else if err != nil {
+		slog.Error("store", "err", err)
+		writeError(w, http.StatusInternalServerError, "internal error")
+		return
+	}
+
+	data, err := io.ReadAll(http.MaxBytesReader(w, r.Body, maxImageSize))
+	if err != nil {
+		writeError(w, http.StatusRequestEntityTooLarge, "image must be 5 MB or smaller")
+		return
+	}
+	// The type comes from the file contents, not from the Content-Type header,
+	// so a renamed file of another kind is rejected.
+	contentType := http.DetectContentType(data)
+	ext, ok := imageTypes[contentType]
+	if !ok {
+		writeError(w, http.StatusUnsupportedMediaType, "image must be PNG, JPEG, GIF or WebP")
+		return
+	}
+
+	// A new key on every upload: browsers may cache an image forever,
+	// and a new picture still shows up right away.
+	key := fmt.Sprintf("%d-%d%s", id, time.Now().UnixNano(), ext)
+	if err := s.images.Put(r.Context(), key, contentType, data); err != nil {
+		if errors.Is(err, ErrNoImages) {
+			writeError(w, http.StatusServiceUnavailable, "image storage is not configured")
+			return
+		}
+		slog.Error("image put", "err", err)
+		writeError(w, http.StatusBadGateway, "could not save the image")
+		return
+	}
+	if err := s.store.SetImage(r.Context(), id, key); err != nil {
+		slog.Error("store", "err", err)
+		writeError(w, http.StatusInternalServerError, "internal error")
+		return
+	}
+	s.cache.Invalidate(r.Context())
+
+	m, err := s.store.Get(r.Context(), id)
+	if err != nil {
+		slog.Error("store", "err", err)
+		writeError(w, http.StatusInternalServerError, "internal error")
+		return
+	}
+	writeJSON(w, http.StatusOK, m)
+}
+
+func (s *server) getImage(w http.ResponseWriter, r *http.Request) {
+	key := r.PathValue("key")
+	if !imageKey.MatchString(key) {
+		http.NotFound(w, r)
+		return
+	}
+	body, contentType, err := s.images.Get(r.Context(), key)
+	if errors.Is(err, ErrNotFound) {
+		http.NotFound(w, r)
+		return
+	}
+	if err != nil {
+		slog.Error("image get", "err", err)
+		http.Error(w, "could not load the image", http.StatusBadGateway)
+		return
+	}
+	defer body.Close()
+	w.Header().Set("Content-Type", contentType)
+	w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+	io.Copy(w, body)
 }
 
 func (s *server) isAdmin(r *http.Request) bool {

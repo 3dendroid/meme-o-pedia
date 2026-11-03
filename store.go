@@ -19,7 +19,8 @@ type Meme struct {
 	CountryCode string `json:"country_code"`
 	CountryName string `json:"country_name"`
 	Year        int    `json:"year"`
-	Status      string `json:"status"` // trend | classic | outdated
+	Status      string `json:"status"`    // trend | classic | outdated
+	ImageURL    string `json:"image_url"` // "" when the meme has no picture
 }
 
 type Country struct {
@@ -43,6 +44,7 @@ type Store interface {
 	Get(ctx context.Context, id int) (Meme, error)
 	Countries(ctx context.Context) ([]Country, error)
 	Create(ctx context.Context, m Meme) (Meme, error)
+	SetImage(ctx context.Context, id int, key string) error
 	Ping(ctx context.Context) error
 }
 
@@ -119,7 +121,9 @@ func (s *pgStore) Migrate(ctx context.Context) error {
 	return tx.Commit(ctx)
 }
 
-const memeColumns = "id, title, description, country_code, country_name, year, status"
+// image_url is built from image_key: pictures are served by the API at /images/<key>.
+const memeColumns = "id, title, description, country_code, country_name, year, status, " +
+	"CASE WHEN image_key = '' THEN '' ELSE '/images/' || image_key END"
 
 func (s *pgStore) List(ctx context.Context, f Filter) ([]Meme, error) {
 	order := "year DESC, id DESC"
@@ -159,6 +163,14 @@ func (s *pgStore) Countries(ctx context.Context) ([]Country, error) {
 		return nil, err
 	}
 	return pgx.CollectRows(rows, pgx.RowToStructByPos[Country])
+}
+
+func (s *pgStore) SetImage(ctx context.Context, id int, key string) error {
+	tag, err := s.pool.Exec(ctx, "UPDATE memes SET image_key = $2 WHERE id = $1", id, key)
+	if err == nil && tag.RowsAffected() == 0 {
+		return ErrNotFound
+	}
+	return err
 }
 
 func (s *pgStore) Create(ctx context.Context, m Meme) (Meme, error) {

@@ -9,5 +9,9 @@ CREATE TABLE IF NOT EXISTS memes (
     created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Added later: the S3 key of the meme picture ('' means no picture).
+-- ADD COLUMN IF NOT EXISTS updates existing databases without losing data.
+ALTER TABLE memes ADD COLUMN IF NOT EXISTS image_key TEXT NOT NULL DEFAULT '';
+
 CREATE INDEX IF NOT EXISTS memes_country_idx ON memes (country_code);
 CREATE INDEX IF NOT EXISTS memes_year_idx ON memes (year);
