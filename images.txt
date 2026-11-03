@@ -1,7 +1,62 @@
-# Pictures from pngimg.com (license CC BY-NC 4.0: non-commercial use, credit the source).
-# Upload them with: ./scripts/upload-images.sh
-# Doge is left out on purpose: it already has a picture; uncomment to replace it.
-# Doge | https://pngimg.com/uploads/doge_meme/doge_meme_PNG3.png
-Trollface | https://pngimg.com/uploads/trollface/trollface_PNG19.png
-Squid Game | https://pngimg.com/uploads/squid_game/squid_game_PNG3.png
-Labubu | https://pngimg.com/uploads/labubu/labubu_PNG10.png
+# Pictures for scripts/upload-images.sh. Format: Meme title | direct link to the picture.
+# Lines starting with # are skipped.
+#
+# Already uploaded: Doge (your own picture) and these pictures from pngimg.com
+# (license CC BY-NC 4.0: non-commercial use, credit the source). Uncomment to upload again.
+# Trollface | https://pngimg.com/uploads/trollface/trollface_PNG19.png
+# Squid Game | https://pngimg.com/uploads/squid_game/squid_game_PNG3.png
+# Labubu | https://pngimg.com/uploads/labubu/labubu_PNG10.png
+#
+# The pictures below are the cover images of the Know Your Meme entries (knowyourmeme.com).
+# Know Your Meme does not license them: they belong to their authors. They are fine for a private
+# learning cluster, but do not publish them on a public site.
+# Not found there: Vzhuh. Wednesday Dance is left out: the entry there is a different dance
+# (from the old Addams Family films, not the 2022 series).
+# Italian Brainrot uses the Tralalero Tralala entry, the best-known character of the trend.
+Dancing Baby | https://i.kym-cdn.com/entries/icons/original/000/000/375/870.jpg
+Pepe the Frog | https://i.kym-cdn.com/entries/icons/original/000/017/618/pepefroggie.jpg
+Preved Medved | https://i.kym-cdn.com/entries/icons/original/000/001/700/25797352_19474915_1204550865_preved_medved.gif
+Keyboard Cat | https://i.kym-cdn.com/entries/icons/original/000/000/166/1920.jpg
+Trololo | https://i.kym-cdn.com/entries/icons/original/000/002/131/Eduard_Khil.jpg
+Double Rainbow | https://i.kym-cdn.com/entries/icons/original/000/003/128/rainbow.jpg
+Nyan Cat | https://i.kym-cdn.com/entries/icons/original/000/005/608/nyan-cat-01-625x450.jpg
+Hide the Pain Harold | https://i.kym-cdn.com/entries/icons/original/000/016/546/hidethepainharold.jpg
+Friday | https://i.kym-cdn.com/entries/icons/original/000/005/320/friday.jpg
+Grumpy Cat | https://i.kym-cdn.com/entries/icons/original/000/011/365/GRUMPYCAT.jpg
+Gangnam Style | https://i.kym-cdn.com/entries/icons/original/000/010/964/gangnamstyle.jpg
+Stoned Fox | https://i.kym-cdn.com/entries/icons/original/000/012/008/Stoned_Fox_meme_banner.jpg
+Overly Attached Girlfriend | https://i.kym-cdn.com/entries/icons/original/000/010/496/Overly_attached_GF.jpg
+This Is Fine | https://i.kym-cdn.com/entries/icons/original/000/018/012/this_is_fine.jpeg
+What Does the Fox Say? | https://i.kym-cdn.com/entries/icons/original/000/013/855/Fox.png
+Ice Bucket Challenge | https://i.kym-cdn.com/entries/icons/original/000/016/196/Screen_Shot_2014-08-08_at_2.12.53_PM.png
+But That's None of My Business | https://i.kym-cdn.com/entries/icons/original/000/015/878/thatsnoneofmy.jpg
+Drakeposting | https://i.kym-cdn.com/entries/icons/original/000/020/147/drake.jpg
+The Dress | https://i.kym-cdn.com/entries/icons/original/000/017/407/857.jpg
+Roll Safe | https://i.kym-cdn.com/entries/icons/original/000/022/138/highresrollsafe.jpg
+Confused Math Lady | https://i.kym-cdn.com/entries/icons/original/000/021/464/14608107_1180665285312703_1558693314_n.jpg
+Pen-Pineapple-Apple-Pen | https://i.kym-cdn.com/entries/icons/original/000/021/392/Pen-Pineapple-Apple-Pen_PIKO-TARO_(1080p_30fps_H264-128kbit_AAC).mp4_snapshot_00.51__2016.09.29_00.55.11_.jpg
+Harambe | https://i.kym-cdn.com/entries/icons/original/000/020/605/Harambe.jpg
+Zhdun | https://i.kym-cdn.com/entries/icons/original/000/022/146/azazazazazazaz.jpg
+Distracted Boyfriend | https://i.kym-cdn.com/entries/icons/original/000/023/732/damngina.jpg
+Salt Bae | https://i.kym-cdn.com/entries/icons/original/000/021/971/Salt-Bae-001.jpg
+Is This a Pigeon? | https://i.kym-cdn.com/entries/icons/original/000/017/299/DmbzJspWwAEprcQ.jpg
+Yanny or Laurel | https://i.kym-cdn.com/entries/icons/original/000/026/191/Screen_Shot_2018-05-15_at_4.35.53_PM.png
+Woman Yelling at Cat | https://i.kym-cdn.com/entries/icons/original/000/030/157/womanyellingcat.jpg
+Storm Area 51 | https://i.kym-cdn.com/entries/icons/original/000/030/357/GTY_area_51_jef_130816_16x9_992.jpg
+Baby Yoda | https://i.kym-cdn.com/entries/icons/original/000/031/827/bright.jpg
+Coffin Dance | https://i.kym-cdn.com/entries/icons/original/000/033/381/dancing_coffin.jpg
+Among Us "Sus" | https://i.kym-cdn.com/entries/icons/original/000/035/256/sus.png
+Bernie Mittens | https://i.kym-cdn.com/entries/icons/original/000/036/345/EsMANJkW4AYbmvv.jpeg
+The Slap | https://i.kym-cdn.com/entries/icons/original/000/039/973/9.JPG
+Skibidi Toilet | https://i.kym-cdn.com/entries/icons/original/000/045/027/skibcover.jpg
+Grimace Shake | https://i.kym-cdn.com/entries/icons/original/000/045/485/gscover.jpg
+Barbenheimer | https://i.kym-cdn.com/entries/icons/original/000/045/661/barbenheimer.jpg
+Moo Deng | https://i.kym-cdn.com/entries/icons/original/000/051/257/cover2.jpg
+Chill Guy | https://i.kym-cdn.com/entries/icons/original/000/051/201/chill-guy.jpg
+Very Demure, Very Mindful | https://i.kym-cdn.com/entries/icons/original/000/050/925/demure.jpg
+Raygun | https://i.kym-cdn.com/entries/icons/original/000/050/911/raygun_australian_breakdancer.jpg
+Italian Brainrot | https://i.kym-cdn.com/entries/icons/original/000/053/192/tralalero_tral.jpg
+Tung Tung Tung Sahur | https://i.kym-cdn.com/entries/icons/original/000/053/559/tung_tung_tung_sahur.jpg
+Aura Farming | https://i.kym-cdn.com/entries/icons/original/000/052/946/Aura_Farming_cover.jpg
+6-7 | https://i.kym-cdn.com/entries/icons/original/000/053/028/67-meme-header.jpg
+Clanker | https://i.kym-cdn.com/entries/icons/original/000/054/685/clankerisourword.jpg
