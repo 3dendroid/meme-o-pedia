@@ -1,0 +1,9 @@
+# Grafana loads every dashboard JSON file from /etc/grafana/dashboards.
+apiVersion: 1
+providers:
+  - name: meme-o-pedia
+    folder: Meme-o-pedia
+    type: file
+    allowUiUpdates: false
+    options:
+      path: /etc/grafana/dashboards

@@ -16,14 +16,17 @@ a database, secrets, a cache, probes and autoscaling under load.
 | PostgreSQL 16 | stores the memes | StatefulSet + PersistentVolumeClaim |
 | Redis 7 | caches API responses for 60 seconds | Deployment |
 | SeaweedFS | S3-compatible storage for meme pictures | StatefulSet + PersistentVolumeClaim |
+| Prometheus | collects API metrics every 5 seconds | Deployment + ServiceAccount + Role |
+| Grafana | dashboard at `/grafana/` | Deployment + HTTPRoute |
 | Relevance job | once a day turns old "trend" memes into "classic" | CronJob |
-| Passwords | database password, admin token, storage keys | Secrets `meme-secrets` and `seaweedfs-s3` (created from `.env`, never committed) |
+| Passwords | database password, admin token, storage keys, Grafana password | Secrets `meme-secrets` and `seaweedfs-s3` (created from `.env`, never committed) |
 
 ```
 .
 ├── main.go, handlers.go, store.go, cache.go   # API code
 ├── recalc.go                                  # the daily relevance job
 ├── images.go                                  # picture storage over S3
+├── metrics.go                                 # Prometheus metrics
 ├── handlers_test.go                           # tests
 ├── migrations/                                # database schema and starter memes (embedded in the binary)
 ├── web/index.html                             # the web page
@@ -31,6 +34,7 @@ a database, secrets, a cache, probes and autoscaling under load.
 ├── docker-compose.yml                         # run without Kubernetes
 ├── deploy/kind-config.yaml                    # three-node kind cluster
 ├── deploy/k8s/                                # Kubernetes manifests
+├── deploy/k8s/monitoring/                     # Prometheus config, Grafana data source and dashboard
 ├── deploy/gateway-class.yaml                  # cluster-wide GatewayClass for Envoy Gateway
 ├── scripts/kind-up.sh                         # create the cluster and deploy everything with one command
 ├── scripts/upload-images.sh                   # download pictures from a list of links and upload them
@@ -267,7 +271,34 @@ Try routing by name: add `hostnames: ["memes.local"]` to the HTTPRoute, apply it
 To open `http://memes.local:8080` in a browser, add the machine IP and `memes.local` to the hosts file
 (`C:\Windows\System32\drivers\etc\hosts` on Windows).
 
-## Step 7. Load and autoscaling
+## Step 7. Monitoring (Prometheus and Grafana)
+
+The API counts requests, response times and cache hits and serves them at `/metrics`
+on a separate port, 9090. The Gateway never routes to that port, so the metrics are visible
+only inside the cluster.
+
+Prometheus finds the API pods through the Kubernetes API and collects their metrics every 5 seconds.
+It may only read pods in the `memes` namespace (a Role, not cluster-wide rights).
+New pods added by the HPA show up in Prometheus by themselves.
+
+Grafana opens at http://localhost:8080/grafana/ (or `http://<machine IP>:8080/grafana/`).
+Log in as `admin` with `GRAFANA_ADMIN_PASSWORD` from `.env`; the dashboard is
+Dashboards -> Meme-o-pedia -> Meme-o-pedia API. It shows the number of API pods, requests per second,
+response time (median and p95), cache hit ratio and errors.
+
+The Prometheus config, the Grafana data source and the dashboard are files in `deploy/k8s/monitoring/`.
+Kustomize turns them into ConfigMaps whose names include a hash of the contents,
+so after changing a file and rerunning the script the pods restart with the new version.
+Metrics and changes made in the Grafana UI live only as long as the pod
+(`emptyDir`); the dashboard itself always comes back from the file.
+
+Look at Prometheus directly (open http://localhost:9090 while the command runs):
+
+```bash
+kubectl -n memes port-forward deploy/prometheus 9090:9090
+```
+
+## Step 8. Load and autoscaling
 
 In one terminal, watch the HPA and pods (the screen refreshes every 2 seconds):
 
@@ -282,6 +313,7 @@ docker run --rm -i --network host grafana/k6 run - < loadtest/k6.js
 ```
 
 After a minute or two the CPU load goes above 60% and the HPA starts adding API pods (up to 8).
+Watch it in Grafana too: "API pods" grows and "Requests per second by pod" gets new lines.
 After the test ends, the extra pods are removed in about 5 minutes.
 
 ## Things to try next
@@ -293,4 +325,4 @@ After the test ends, the extra pods are removed in about 5 minutes.
 - Change the password in `.env`, rerun the script and figure out why Postgres rejects it
   (hint: the password is set only when the database is first created).
 
-Next steps for the project: metrics in Prometheus and Grafana, HTTPS on the Gateway, storing secrets outside the cluster.
+Next steps for the project: alerts in Prometheus, HTTPS on the Gateway, storing secrets outside the cluster.

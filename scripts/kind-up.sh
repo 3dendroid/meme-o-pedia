@@ -19,6 +19,7 @@ source .env
 : "${ADMIN_TOKEN:?ADMIN_TOKEN is not set in .env}"
 : "${S3_ACCESS_KEY:?S3_ACCESS_KEY is not set in .env (see .env.example)}"
 : "${S3_SECRET_KEY:?S3_SECRET_KEY is not set in .env (see .env.example)}"
+: "${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD is not set in .env (see .env.example)}"
 # The keys go into a JSON file as is, so keep them simple.
 if [[ ! "$S3_ACCESS_KEY$S3_SECRET_KEY" =~ ^[A-Za-z0-9]+$ ]]; then
   echo "S3_ACCESS_KEY and S3_SECRET_KEY may contain only letters and digits." >&2
@@ -54,6 +55,7 @@ kubectl -n memes create secret generic meme-secrets \
   --from-literal=admin-token="$ADMIN_TOKEN" \
   --from-literal=s3-access-key="$S3_ACCESS_KEY" \
   --from-literal=s3-secret-key="$S3_SECRET_KEY" \
+  --from-literal=grafana-admin-password="$GRAFANA_ADMIN_PASSWORD" \
   --dry-run=client -o yaml | kubectl apply -f -
 
 # SeaweedFS reads its keys from a JSON file; this Secret becomes that file in the pod.
@@ -71,7 +73,9 @@ kubectl -n memes rollout status statefulset/postgres --timeout=180s
 kubectl -n memes rollout status statefulset/seaweedfs --timeout=300s
 kubectl -n memes rollout status deployment/api --timeout=180s
 kubectl -n memes wait --for=condition=Programmed gateway/memes --timeout=300s
+kubectl -n memes rollout status deployment/prometheus --timeout=300s
+kubectl -n memes rollout status deployment/grafana --timeout=300s
 
 echo
-echo "Done: http://localhost:8080"
+echo "Done: http://localhost:8080 (Grafana: http://localhost:8080/grafana/, user admin)"
 kubectl -n memes get pods -o wide

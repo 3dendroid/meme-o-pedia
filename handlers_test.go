@@ -9,6 +9,8 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/prometheus/client_golang/prometheus/testutil"
 )
 
 type fakeStore struct {
@@ -257,5 +259,22 @@ func TestGetImageRejectsBadKeys(t *testing.T) {
 		if rec := do(h, "GET", p, "", ""); rec.Code != 404 {
 			t.Fatalf("%s: want 404, got %d", p, rec.Code)
 		}
+	}
+}
+
+func TestMetricsUseRoutePatterns(t *testing.T) {
+	_, _, h := setup()
+	before := testutil.ToFloat64(httpRequests.WithLabelValues("GET", "GET /api/memes/{id}", "200"))
+	do(h, "GET", "/api/memes/1", "", "")
+	after := testutil.ToFloat64(httpRequests.WithLabelValues("GET", "GET /api/memes/{id}", "200"))
+	if after != before+1 {
+		t.Fatalf("request was not counted under its route pattern (before %v, after %v)", before, after)
+	}
+
+	hits := testutil.ToFloat64(cacheRequests.WithLabelValues("hit"))
+	do(h, "GET", "/api/memes?country=JP", "", "")
+	do(h, "GET", "/api/memes?country=JP", "", "")
+	if testutil.ToFloat64(cacheRequests.WithLabelValues("hit")) != hits+1 {
+		t.Fatal("cache hit was not counted")
 	}
 }

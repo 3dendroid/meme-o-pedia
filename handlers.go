@@ -98,6 +98,7 @@ func (s *server) listCountries(w http.ResponseWriter, r *http.Request) {
 // saving the result to the cache. The X-Cache header shows where it came from.
 func (s *server) cached(w http.ResponseWriter, r *http.Request, key string, load func(context.Context) (any, error)) {
 	if body, ok := s.cache.Get(r.Context(), key); ok {
+		cacheRequests.WithLabelValues("hit").Inc()
 		w.Header().Set("X-Cache", "HIT")
 		writeRaw(w, http.StatusOK, body)
 		return
@@ -108,6 +109,7 @@ func (s *server) cached(w http.ResponseWriter, r *http.Request, key string, load
 		writeError(w, http.StatusInternalServerError, "internal error")
 		return
 	}
+	cacheRequests.WithLabelValues("miss").Inc()
 	body, _ := json.Marshal(v)
 	s.cache.Set(r.Context(), key, body)
 	w.Header().Set("X-Cache", "MISS")
@@ -307,6 +309,7 @@ func logRequests(next http.Handler) http.Handler {
 		start := time.Now()
 		rec := &statusRecorder{ResponseWriter: w, code: http.StatusOK}
 		next.ServeHTTP(rec, r)
+		observe(r, rec.code, time.Since(start))
 		if r.URL.Path == "/healthz" || r.URL.Path == "/readyz" {
 			return // Kubernetes probes arrive every few seconds; keep them out of the log
 		}
