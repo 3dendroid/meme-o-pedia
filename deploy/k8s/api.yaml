@@ -36,6 +36,20 @@ spec:
               value: postgres
             - name: REDIS_ADDR
               value: redis:6379
+            - name: S3_ENDPOINT
+              value: http://seaweedfs:8333
+            - name: S3_BUCKET
+              value: memes
+            - name: S3_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: meme-secrets
+                  key: s3-access-key
+            - name: S3_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: meme-secrets
+                  key: s3-secret-key
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:

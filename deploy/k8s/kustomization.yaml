@@ -8,6 +8,7 @@ resources:
   - namespace.yaml
   - postgres.yaml
   - redis.yaml
+  - seaweedfs.yaml
   - api.yaml
   - hpa.yaml
   - cronjob.yaml
