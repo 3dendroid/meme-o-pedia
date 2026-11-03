@@ -21,6 +21,7 @@ type Meme struct {
 	Year        int    `json:"year"`
 	Status      string `json:"status"`    // trend | classic | outdated
 	ImageURL    string `json:"image_url"` // "" when the meme has no picture
+	VideoURL    string `json:"video_url"` // a YouTube link, or "" when there is no known video
 }
 
 type Country struct {
@@ -118,8 +119,9 @@ func (s *pgStore) Migrate(ctx context.Context) error {
 		}
 		slog.Info("database seeded")
 	}
-	// Files from 003 on run on every start, in name order. Each adds only the memes
-	// whose titles are missing, so they also fill databases seeded before the file existed.
+	// Files from 003 on run on every start, in name order. Each only adds what is missing
+	// (memes with new titles, videos for memes without one), so they also update
+	// databases created before the file existed.
 	entries, err := migrations.ReadDir("migrations")
 	if err != nil {
 		return err
@@ -137,7 +139,7 @@ func (s *pgStore) Migrate(ctx context.Context) error {
 			return fmt.Errorf("%s: %w", e.Name(), err)
 		}
 		if tag.RowsAffected() > 0 {
-			slog.Info("memes added", "file", e.Name(), "count", tag.RowsAffected())
+			slog.Info("migration applied", "file", e.Name(), "rows", tag.RowsAffected())
 		}
 	}
 	return tx.Commit(ctx)
@@ -145,7 +147,8 @@ func (s *pgStore) Migrate(ctx context.Context) error {
 
 // image_url is built from image_key: pictures are served by the API at /images/<key>.
 const memeColumns = "id, title, description, country_code, country_name, year, status, " +
-	"CASE WHEN image_key = '' THEN '' ELSE '/images/' || image_key END"
+	"CASE WHEN image_key = '' THEN '' ELSE '/images/' || image_key END, " +
+	"CASE WHEN video_id = '' THEN '' ELSE 'https://www.youtube.com/watch?v=' || video_id END"
 
 func (s *pgStore) List(ctx context.Context, f Filter) ([]Meme, error) {
 	order := "year DESC, id DESC"
