@@ -96,10 +96,6 @@ func (s *pgStore) Migrate(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	more, err := migrations.ReadFile("migrations/003_more_memes.sql")
-	if err != nil {
-		return err
-	}
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return err
@@ -122,14 +118,27 @@ func (s *pgStore) Migrate(ctx context.Context) error {
 		}
 		slog.Info("database seeded")
 	}
-	// 003 runs on every start: it adds only the memes whose titles are missing,
-	// so it also fills databases that were seeded before the file existed.
-	tag, err := tx.Exec(ctx, string(more))
+	// Files from 003 on run on every start, in name order. Each adds only the memes
+	// whose titles are missing, so they also fill databases seeded before the file existed.
+	entries, err := migrations.ReadDir("migrations")
 	if err != nil {
-		return fmt.Errorf("more memes: %w", err)
+		return err
 	}
-	if tag.RowsAffected() > 0 {
-		slog.Info("memes added", "count", tag.RowsAffected())
+	for _, e := range entries {
+		if e.Name() < "003" {
+			continue
+		}
+		sql, err := migrations.ReadFile("migrations/" + e.Name())
+		if err != nil {
+			return err
+		}
+		tag, err := tx.Exec(ctx, string(sql))
+		if err != nil {
+			return fmt.Errorf("%s: %w", e.Name(), err)
+		}
+		if tag.RowsAffected() > 0 {
+			slog.Info("memes added", "file", e.Name(), "count", tag.RowsAffected())
+		}
 	}
 	return tx.Commit(ctx)
 }
