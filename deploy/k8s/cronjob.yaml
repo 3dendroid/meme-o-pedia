@@ -1,0 +1,38 @@
+# Once a day at 03:00 (cluster time, UTC) a pod starts from the same image as the API,
+# runs "meme-o-pedia recalc" and exits. Trend memes older than a year become classic.
+# Run it by hand: kubectl -n memes create job --from=cronjob/relevance relevance-manual
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: relevance
+spec:
+  schedule: "0 3 * * *"
+  concurrencyPolicy: Forbid # never run two copies at once
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2 # retry up to 2 times on failure
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: recalc
+              image: meme-o-pedia:dev
+              imagePullPolicy: IfNotPresent
+              args: ["recalc"]
+              env:
+                - name: DB_HOST
+                  value: postgres
+                - name: REDIS_ADDR
+                  value: redis:6379
+                - name: TREND_MAX_AGE_YEARS
+                  value: "1"
+                - name: DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: meme-secrets
+                      key: db-password
+              resources:
+                requests: { cpu: 10m, memory: 16Mi }
+                limits: { memory: 64Mi }

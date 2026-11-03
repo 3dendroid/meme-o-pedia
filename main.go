@@ -74,15 +74,25 @@ func main() {
 	}
 	defer store.Close()
 
-	if err := store.Migrate(ctx); err != nil {
-		log.Error("migrate", "err", err)
-		os.Exit(1)
-	}
-
 	var cache Cache = noCache{}
 	if cfg.RedisAddr != "" {
 		cache = newRedisCache(cfg.RedisAddr, cfg.RedisPass)
 		log.Info("redis cache enabled", "addr", cfg.RedisAddr)
+	}
+
+	// "meme-o-pedia recalc" runs the relevance job once and exits.
+	// The Kubernetes CronJob starts the same image with this argument.
+	if len(os.Args) > 1 && os.Args[1] == "recalc" {
+		if err := recalc(ctx, store, cache); err != nil {
+			log.Error("recalc", "err", err)
+			os.Exit(1)
+		}
+		return
+	}
+
+	if err := store.Migrate(ctx); err != nil {
+		log.Error("migrate", "err", err)
+		os.Exit(1)
 	}
 
 	srv := &http.Server{

@@ -14,11 +14,13 @@ a database, secrets, a cache, probes and autoscaling under load.
 | API + web page | Go, a single binary, ~20 MB image | Deployment + Service (NodePort) + HPA |
 | PostgreSQL 16 | stores the memes | StatefulSet + PersistentVolumeClaim |
 | Redis 7 | caches API responses for 60 seconds | Deployment |
+| Relevance job | once a day turns old "trend" memes into "classic" | CronJob |
 | Passwords | database password and admin token | Secret `meme-secrets` (created from `.env`, never committed) |
 
 ```
 .
 ├── main.go, handlers.go, store.go, cache.go   # API code
+├── recalc.go                                  # the daily relevance job
 ├── handlers_test.go                           # tests
 ├── migrations/                                # database schema and starter memes (embedded in the binary)
 ├── web/index.html                             # the web page
@@ -158,7 +160,33 @@ kubectl -n memes rollout restart deployment/api
 
 On startup the API sees an empty table and loads the memes again.
 
-## Step 4. Load and autoscaling
+## Step 4. The daily relevance job (CronJob)
+
+Every day at 03:00 (cluster time, UTC) Kubernetes starts a pod from the same image
+with the `recalc` argument. It turns "trend" memes older than a year into "classic",
+resets the Redis cache and exits. The age is set by `TREND_MAX_AGE_YEARS` in `deploy/k8s/cronjob.yaml`.
+
+See the schedule and the last run:
+
+```bash
+kubectl -n memes get cronjob,jobs
+```
+
+Run the job right now without waiting for 03:00:
+
+```bash
+kubectl -n memes create job --from=cronjob/relevance relevance-manual
+```
+
+Read its log (it prints how many memes changed):
+
+```bash
+kubectl -n memes logs job/relevance-manual
+```
+
+To run it by hand again, delete the old job first: `kubectl -n memes delete job relevance-manual`.
+
+## Step 5. Load and autoscaling
 
 In one terminal, watch the HPA and pods (the screen refreshes every 2 seconds):
 
