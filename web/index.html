@@ -142,6 +142,17 @@
   .classic { background: var(--classic); color: var(--classic-ink); }
   .outdated { background: var(--outdated); color: var(--outdated-ink); }
   .card p { margin: 0; font-size: 15px; }
+  .body { flex-grow: 1; }
+  .yt {
+    margin-top: auto; align-self: flex-start;
+    display: inline-flex; align-items: center; gap: 8px;
+    min-height: 36px; padding: 0 12px; border-radius: 8px;
+    border: 1px solid var(--line); color: var(--ink); text-decoration: none;
+    font: 600 14px var(--font-body);
+  }
+  .yt:hover { border-color: var(--ink); }
+  .yt svg { flex-shrink: 0; }
+  .yt.search { font-weight: 500; color: var(--muted); }
 
   .empty { padding: 64px 0; text-align: center; color: var(--muted); }
   .empty b { display: block; font: 800 24px var(--font-display); color: var(--ink); margin-bottom: 6px; }
@@ -215,6 +226,27 @@ function initials(title) {
   return (words.length > 1 ? words[0][0] + words[1][0] : (words[0] || '?').slice(0, 2)).toUpperCase();
 }
 
+// A known video opens directly; otherwise the link searches YouTube for the meme.
+const YT_WATCH = /^https:\/\/www\.youtube\.com\/watch\?v=[A-Za-z0-9_-]{11}$/;
+function youtubeLink(m) {
+  const a = el('a', 'yt');
+  a.target = '_blank';
+  a.rel = 'noopener';
+  const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  icon.setAttribute('width', '18'); icon.setAttribute('height', '18'); icon.setAttribute('viewBox', '0 0 24 24');
+  icon.setAttribute('aria-hidden', 'true');
+  icon.innerHTML = '<rect x="2" y="5" width="20" height="14" rx="4" fill="currentColor" opacity=".15"/><path d="M10 9l5 3-5 3z" fill="currentColor"/>';
+  if (YT_WATCH.test(m.video_url)) {
+    a.href = m.video_url;
+    a.append(icon, document.createTextNode('Watch on YouTube'));
+  } else {
+    a.href = 'https://www.youtube.com/results?search_query=' + encodeURIComponent(m.title + ' meme');
+    a.classList.add('search');
+    a.append(icon, document.createTextNode('Search on YouTube'));
+  }
+  return a;
+}
+
 // ZZ marks memes born online with no single country of origin.
 const countryLabel = (code) => (code === 'ZZ' ? 'WEB' : code);
 
@@ -238,7 +270,7 @@ function card(m) {
   const body = el('div', 'body');
   const meta = el('div', 'meta');
   meta.append(el('span', '', m.country_name), el('span', 'badge ' + m.status, STATUS[m.status] || m.status));
-  body.append(el('h3', '', m.title), meta, el('p', '', m.description));
+  body.append(el('h3', '', m.title), meta, el('p', '', m.description), youtubeLink(m));
   c.append(cover, body);
   return c;
 }

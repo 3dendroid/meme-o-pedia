@@ -156,7 +156,18 @@ kind delete cluster --name memes
 `migrations/003_more_memes.sql` and `004_even_more_memes.sql` hold more memes collected from
 Know Your Meme (the year comes from each entry). Every file from `003` on runs on every start, in name order,
 and adds only the memes whose titles are not in the table yet, so `git pull && ./scripts/kind-up.sh`
-is enough to get new ones. To add memes later, put them into a new file such as `005_....sql`.
+is enough to get new ones. To add memes later, put them into a new file such as `006_....sql`.
+
+`migrations/005_videos.sql` gives memes a YouTube video: the video embedded in each meme's
+Know Your Meme entry (the Origin section first), checked to still exist on YouTube.
+It fills only memes without a video, so a video set by hand stays. Cards show "Watch on YouTube"
+for those memes and a "Search on YouTube" link for the rest. To set a video by hand:
+
+```bash
+kubectl -n memes exec postgres-0 -- psql -U memes -c "UPDATE memes SET video_id = 'VIDEO_ID' WHERE title = 'Meme title'"
+```
+
+`VIDEO_ID` is the 11 characters after `watch?v=` in the YouTube link.
 
 The first starter memes from `migrations/002_seed.sql` are loaded only into an empty table.
 After changing that file, update the app and reload the data
