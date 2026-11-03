@@ -1,0 +1,7 @@
+# Pictures from pngimg.com (license CC BY-NC 4.0: non-commercial use, credit the source).
+# Upload them with: ./scripts/upload-images.sh
+# Doge is left out on purpose: it already has a picture; uncomment to replace it.
+# Doge | https://pngimg.com/uploads/doge_meme/doge_meme_PNG3.png
+Trollface | https://pngimg.com/uploads/trollface/trollface_PNG19.png
+Squid Game | https://pngimg.com/uploads/squid_game/squid_game_PNG3.png
+Labubu | https://pngimg.com/uploads/labubu/labubu_PNG10.png

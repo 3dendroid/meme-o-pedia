@@ -126,7 +126,8 @@
     color: var(--cover-ink);
   }
   .cover.photo { height: 200px; justify-content: flex-end; }
-  .cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  /* contain: cut-out PNGs and tall pictures show whole on the colored background. */
+  .cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; padding: 8px; box-sizing: border-box; }
   .cover .code { position: relative; }
   .cover .initials { font: 800 44px/1 var(--font-display); letter-spacing: -0.03em; opacity: .85; }
   .cover .code {
@@ -147,6 +148,7 @@
   .error { color: #c62828; }
 
   footer { padding-block: 24px 40px; color: var(--muted); font-size: 13px; }
+  footer a { color: inherit; }
 
   @media (max-width: 640px) {
     header { padding-block: 32px 20px; }
@@ -186,7 +188,8 @@
 
   <main id="list"></main>
 
-  <footer>Dates and countries are approximate. Statuses reflect popularity at the time the entries were written.</footer>
+  <footer>Dates and countries are approximate. Statuses reflect popularity at the time the entries were written.
+    Pictures: <a href="https://pngimg.com/">pngimg.com</a>, <a href="https://pngimg.com/license">CC BY-NC 4.0</a>.</footer>
 </div>
 <script>
 const STATUS = { trend: 'Trending', classic: 'Classic', outdated: 'Outdated' };
