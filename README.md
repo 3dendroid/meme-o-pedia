@@ -33,6 +33,7 @@ a database, secrets, a cache, probes and autoscaling under load.
 ├── deploy/k8s/                                # Kubernetes manifests
 ├── deploy/gateway-class.yaml                  # cluster-wide GatewayClass for Envoy Gateway
 ├── scripts/kind-up.sh                         # create the cluster and deploy everything with one command
+├── scripts/upload-images.sh                   # download pictures from a list of links and upload them
 └── loadtest/k6.js                             # load test
 ```
 
@@ -216,6 +217,19 @@ curl -X PUT localhost:8080/api/memes/15/image -H "Authorization: Bearer $ADMIN_T
 
 The API checks the file contents, not its name: only PNG, JPEG, GIF and WebP up to 5 MB are accepted.
 Refresh the site: the picture replaces the colored cover. Uploading again replaces the picture.
+
+To upload many pictures at once, put links into a list and run the script.
+It finds each meme by its title, downloads the picture and uploads it through the API:
+
+```bash
+cp images.example.txt images.txt
+```
+
+Fill in the links in `images.txt` (`Meme title | https://direct-link-to-picture.png`), then:
+
+```bash
+./scripts/upload-images.sh
+```
 
 If you change the storage keys in `.env`, rerun the script and restart SeaweedFS so it rereads them:
 `kubectl -n memes rollout restart statefulset/seaweedfs`.

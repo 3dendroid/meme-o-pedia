@@ -1,0 +1,19 @@
+# Pictures for scripts/upload-images.sh. Copy to images.txt and fill in the links:
+#   cp images.example.txt images.txt
+# Format: Meme title | direct link to a PNG, JPEG, GIF or WebP file (up to 5 MB).
+# A direct link opens just the picture: right-click the image on the site -> "Copy image address".
+# Use pictures you are allowed to use and keep any attribution their license asks for.
+Doge |
+Trollface |
+Pepe the Frog |
+Grumpy Cat |
+Nyan Cat |
+This Is Fine |
+Harambe |
+But That's None of My Business |
+Baby Yoda |
+Among Us "Sus" |
+Squid Game |
+Labubu |
+Chill Guy |
+Moo Deng |
