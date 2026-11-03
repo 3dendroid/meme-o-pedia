@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"strconv"
+	"sync/atomic"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -25,7 +26,21 @@ func (noCache) Invalidate(context.Context)                 {}
 
 const cacheTTL = 60 * time.Second
 
-type redisCache struct{ rdb *redis.Client }
+type redisCache struct {
+	rdb      *redis.Client
+	lastWarn atomic.Int64 // unix nanoseconds of the last logged warning
+}
+
+// warn logs a cache problem at most once every 10 seconds. With Redis down,
+// every request fails twice (get and set); logging each one would flood the logs.
+func (c *redisCache) warn(msg string, err error) {
+	now := time.Now().UnixNano()
+	last := c.lastWarn.Load()
+	if now-last < int64(10*time.Second) || !c.lastWarn.CompareAndSwap(last, now) {
+		return
+	}
+	slog.Warn(msg, "err", err)
+}
 
 func newRedisCache(addr, password string) *redisCache {
 	// Short timeouts: if Redis is down, the request quickly falls back to the database
@@ -53,13 +68,13 @@ func (c *redisCache) key(ctx context.Context, key string) (string, error) {
 func (c *redisCache) Get(ctx context.Context, key string) ([]byte, bool) {
 	k, err := c.key(ctx, key)
 	if err != nil {
-		slog.Warn("cache get", "err", err)
+		c.warn("cache get", err)
 		return nil, false
 	}
 	val, err := c.rdb.Get(ctx, k).Bytes()
 	if err != nil {
 		if err != redis.Nil {
-			slog.Warn("cache get", "err", err)
+			c.warn("cache get", err)
 		}
 		return nil, false
 	}
@@ -72,12 +87,12 @@ func (c *redisCache) Set(ctx context.Context, key string, val []byte) {
 		err = c.rdb.Set(ctx, k, val, cacheTTL).Err()
 	}
 	if err != nil {
-		slog.Warn("cache set", "err", err)
+		c.warn("cache set", err)
 	}
 }
 
 func (c *redisCache) Invalidate(ctx context.Context) {
 	if err := c.rdb.Incr(ctx, "memes:ver").Err(); err != nil {
-		slog.Warn("cache invalidate", "err", err)
+		c.warn("cache invalidate", err)
 	}
 }
