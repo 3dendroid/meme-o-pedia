@@ -10,3 +10,4 @@ resources:
   - redis.yaml
   - api.yaml
   - hpa.yaml
+  - cronjob.yaml
