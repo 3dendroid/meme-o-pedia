@@ -16,6 +16,10 @@ spec:
     kubernetes:
       envoyService:
         type: NodePort
+        # The default "Local" accepts traffic only on nodes that run an Envoy pod.
+        # kind sends host port 8080 to the control-plane node, where Envoy does not run,
+        # so "Cluster" lets any node forward the request to the Envoy pod.
+        externalTrafficPolicy: Cluster
         patch:
           value:
             spec:
