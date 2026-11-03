@@ -7,6 +7,7 @@ set -euo pipefail
 CLUSTER=memes
 IMAGE=meme-o-pedia:dev
 METRICS_SERVER_VERSION=v0.7.2
+ENVOY_GATEWAY_VERSION=v1.9.2
 
 if [[ ! -f .env ]]; then
   echo "No .env file. Create it with: cp .env.example .env and set your passwords." >&2
@@ -35,6 +36,13 @@ if ! kind get clusters | grep -qx "$CLUSTER"; then
     -p='[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--kubelet-insecure-tls"}]'
 fi
 
+echo "==> Installing Envoy Gateway ${ENVOY_GATEWAY_VERSION} (runs the Gateway API objects)"
+# --server-side: the file holds large CRDs that do not fit into a client-side apply annotation.
+kubectl apply --server-side --force-conflicts \
+  -f "https://github.com/envoyproxy/gateway/releases/download/${ENVOY_GATEWAY_VERSION}/install.yaml"
+kubectl -n envoy-gateway-system wait --for=condition=Available deployment/envoy-gateway --timeout=300s
+kubectl apply -f deploy/gateway-class.yaml
+
 echo "==> Building image $IMAGE and loading it into the cluster nodes"
 docker build -t "$IMAGE" .
 kind load docker-image "$IMAGE" --name "$CLUSTER"
@@ -62,6 +70,7 @@ kubectl -n memes rollout restart deployment/api
 kubectl -n memes rollout status statefulset/postgres --timeout=180s
 kubectl -n memes rollout status statefulset/seaweedfs --timeout=300s
 kubectl -n memes rollout status deployment/api --timeout=180s
+kubectl -n memes wait --for=condition=Programmed gateway/memes --timeout=300s
 
 echo
 echo "Done: http://localhost:8080"

@@ -1,5 +1,5 @@
 # A three-node cluster: one control plane and two workers.
-# Port 30080 (the API service NodePort) is mapped to port 8080 of the host,
+# Port 30080 (the NodePort of the Envoy Gateway service) is mapped to port 8080 of the host,
 # so the site opens at http://localhost:8080.
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4

@@ -12,3 +12,4 @@ resources:
   - api.yaml
   - hpa.yaml
   - cronjob.yaml
+  - gateway.yaml

@@ -1,0 +1,9 @@
+# The GatewayClass says which controller runs Gateways of class "envoy".
+# It is cluster-wide (no namespace), so it lives outside deploy/k8s,
+# where kustomize puts every object into the memes namespace.
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: envoy
+spec:
+  controllerName: gateway.envoyproxy.io/gatewayclass-controller
